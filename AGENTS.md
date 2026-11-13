@@ -3,7 +3,9 @@
 > **Fuente única de verdad** para todos los que trabajan en el repo: el humano (Product Owner), **Claude** (planeación, arquitectura y lógica) y **Codex** (diseño frontend y UI/UX).
 > Léelo completo antes de empezar cualquier tarea. Si una decisión cambia, se actualiza **este** archivo y se anota en el [Registro de coordinación](#16-registro-de-coordinación).
 >
-> Última actualización: 2026-11-13 · Estado: **Fase 0 (fundaciones), sin código aún**
+> Última actualización: 2026-11-13 · Estado: **Fase 0. Lado Claude entregado (contrato v0.1 + mocks). Siguiente: design system (Codex)**
+>
+> **Arranque rápido:** `npm install` → `npm run dev` (http://localhost:3000) · `npm run check` (tipos + lint + tests). Con `USE_MOCKS=true` (default) no hace falta base de datos.
 
 ---
 
@@ -123,17 +125,17 @@ UdeA, Universidad Nacional (sede Medellín), EAFIT, UPB, Universidad de Medellí
 
 | Capa | Elección | Motivo |
 |------|----------|--------|
-| Framework | **Next.js (última estable, App Router) + TypeScript estricto** | SSR/SEO para las páginas de oportunidades, un solo lenguaje y buena compatibilidad con ambos agentes |
+| Framework | **Next.js 16.4 (App Router, `cacheComponents` + `partialPrefetching` activos) + React 19 + TypeScript estricto** | SSR/SEO para las páginas de oportunidades, un solo lenguaje y buena compatibilidad con ambos agentes |
 | UI | **Tailwind CSS + shadcn/ui** (Radix) + lucide-react | Accesible por defecto y fácil de tematizar (lo maneja Codex) |
 | Base de datos | **Supabase (Postgres)** | Plan gratuito, Auth, RLS y búsqueda de texto completo nativa |
-| Búsqueda | Postgres FTS (configuración `spanish` + `unaccent`) + `pg_trgm` | Cero servicios extra. Si algún día hace falta, se migra a Meilisearch o Typesense |
+| Búsqueda | **Motor en memoria en TypeScript** (`src/server/search`) sobre los registros publicados: sin tildes, plurales simples, facetas y orden | Para el volumen del MVP (< ~5.000 activas) es suficiente, y se comporta igual con mocks o con BD. La migración ya deja Postgres FTS (`spanish` + `unaccent`) + `pg_trgm` listo para cuando crezca, con la misma firma |
 | Validación | **Zod** | El mismo esquema valida formularios, la API y la ingesta |
 | Auth | Supabase Auth (solo administradores en v1) | Estudiantes sin cuenta (D7) |
 | Ingesta y jobs | Scripts TypeScript en `ingestion/`, ejecutados con **GitHub Actions cron** | Gratis y versionado |
 | Hosting | **Vercel** (Hobby) | Despliegue con cada push y previews por PR |
 | Tests | **Vitest** (lógica) · **Playwright** (e2e de flujos UI) | |
 | Calidad | ESLint + Prettier + `tsc --noEmit` en CI | |
-| Gestor de paquetes | **pnpm** · Node LTS actual | |
+| Gestor de paquetes | **npm** (`package-lock.json`) · Node ≥ 24 | pnpm no estaba instalado y npm viene con Node |
 | v2 | Resend (correos de alertas), PostHog (analítica) | |
 
 ### Flujo de datos
@@ -150,6 +152,14 @@ Admin (carga manual / revisión) ───────────────�
                             ▲
          src/lib/eligibility (motor puro, isomórfico) + perfil en cookie
 ```
+
+### Reglas de Next.js 16 en este repo (importante para Codex)
+Esta versión de Next tiene cambios grandes respecto a versiones anteriores. Antes de usar una API, revisa la guía en `node_modules/next/dist/docs/`.
+1. **Todas las queries de `@/server/queries` son de petición** (leen la cookie del perfil y la fecha actual). Con `cacheComponents`, el componente que las llama **debe ir dentro de `<Suspense fallback={…}>`**; si no, el build falla con *blocking route*. El fallback es el *skeleton*, y el resto de la página se prerenderiza como shell estático. Ejemplo: `src/app/page.tsx` (placeholder).
+2. `params` y `searchParams` de las páginas son **Promise**: `const sp = await props.searchParams; const params = parseSearchParams(sp);`. Esto también va dentro de un componente envuelto en `<Suspense>`.
+3. Las cookies solo se escriben desde server actions (`saveProfile`, `clearProfile`), nunca durante el render.
+4. Las server actions se pueden llamar directo desde client components (`await saveProfile({...})`) y siempre devuelven `ActionResult` (nunca lanzan).
+5. No uses `"use cache"` en componentes que muestren elegibilidad: el resultado depende del perfil de cada estudiante.
 
 ---
 
@@ -170,21 +180,27 @@ practicascol/
 │  ├─ lib/
 │  │  ├─ contracts/          # [CLAUDE] ★ CONTRATO: tipos, esquemas Zod y (de)serialización de URL
 │  │  ├─ eligibility/        # [CLAUDE] Motor "¿Aplico?" (funciones puras)
-│  │  ├─ mocks/              # [CLAUDE] Fixtures realistas que cumplen el contrato
-│  │  ├─ catalog/            # [CLAUDE] Municipios, niveles y etiquetas de enums
+│  │  ├─ mocks/              # [CLAUDE] Datos de prueba ficticios + objetos del contrato listos (mockCards…)
+│  │  ├─ catalog/            # [CLAUDE] Municipios, instituciones, programas, NBC y etiquetas de enums
+│  │  ├─ time/               # [CLAUDE] Fechas en hora de Colombia
 │  │  └─ format/             # [CODEX]  Presentación: fechas relativas, COP, pluralización
-│  └─ server/                # [CLAUDE] db, queries, actions, auth, perfil (cookie)
-│     ├─ queries/
-│     ├─ actions/
-│     └─ db/
+│  ├─ server/                # [CLAUDE] Nada aquí es importable desde client components
+│  │  ├─ queries/            # ★ Lecturas para la UI (contrato)
+│  │  ├─ actions/            # ★ Server actions para la UI (contrato)
+│  │  ├─ domain/             # Modelo interno y mappers registro → contrato
+│  │  ├─ search/             # Motor de búsqueda
+│  │  ├─ repo/               # Acceso a datos (memoria hoy, Supabase en Fase 1)
+│  │  └─ profile.ts          # Cookie del perfil
+│  └─ test/                  # [CLAUDE] Utilidades de tests
 ├─ ingestion/                # [CLAUDE] Adaptadores, normalizadores, dedupe y jobs
 ├─ supabase/                 # [CLAUDE] Migraciones, seeds y políticas RLS
 ├─ e2e/                      # [CODEX]  Tests Playwright de flujos
 ├─ .github/workflows/        # [CLAUDE] CI y cron de ingesta
-└─ tailwind / components.json / config de UI   # [CODEX]
+└─ components.json / config de UI   # [CODEX]
 ```
 
-Archivos raíz de infraestructura (`package.json`, `tsconfig.json`, `next.config.*`, `.env.example`): los crea **Claude** en la Fase 0. Codex puede **agregar dependencias de UI** a `package.json` y lo anota en el registro.
+- `src/app/globals.css` (Tailwind v4, tokens en `@theme`), `src/app/layout.tsx` y las fuentes son de **Codex**. Claude solo dejó `lang="es-CO"` y la metadata básica.
+- Archivos raíz de infraestructura (`package.json`, `tsconfig.json`, `next.config.ts`, `eslint.config.mjs`, `vitest.config.mts`, `.env.example`) son de **Claude**. Codex puede **agregar dependencias de UI** a `package.json` y lo anota en el registro.
 
 ---
 
@@ -234,7 +250,7 @@ Archivos raíz de infraestructura (`package.json`, `tsconfig.json`, `next.config
 
 | Ruta | Propósito | Datos (función del contrato) |
 |------|-----------|------------------------------|
-| `/` | Inicio: buscador principal, accesos rápidos por tipo y nivel, "cierran pronto" | `getHomeData()` |
+| `/` | Inicio: buscador principal, accesos rápidos por tipo y nivel, "cierran pronto" (hoy es un placeholder de Claude, para reemplazar) | `getHomeData()` |
 | `/practicas` | Resultados con filtros (el estado vive en la URL) | `searchOpportunities(params)` |
 | `/practicas/[slug]` | Detalle, "¿Aplico?" y botón al enlace oficial | `getOpportunity(slug)` |
 | `/perfil` | Crear o editar el perfil académico (sin cuenta) | `getProfile()`, `saveProfile()`, `clearProfile()` |
@@ -281,10 +297,48 @@ Cada `EligibilityCheck` trae `criterion`, `status`, `code` (estable, por ejemplo
 
 ---
 
-## 11. Contrato inicial (borrador v0.1)
+## 11. Contrato v0.1 (implementado)
 
-> El código real vive en `src/lib/contracts/` (Claude). Esto es un resumen para orientar el diseño. **Si hay diferencias, manda el código.**
+> **La fuente de verdad es el código** (`CONTRACT_VERSION` en `src/lib/contracts/index.ts`). Lo de abajo es un resumen. Si hay diferencias, manda el código.
 
+### Dónde está cada cosa
+| Necesitas… | Importa de |
+|------------|------------|
+| Tipos, enums y helpers de URL (`parseSearchParams`, `toSearchParams`, `countActiveFilters`) | `@/lib/contracts` |
+| Etiquetas en español de los enums (`OPPORTUNITY_TYPE_LABELS`, `SORT_LABELS`…) | `@/lib/catalog/labels` |
+| Lecturas: `searchOpportunities`, `getOpportunity`, `getHomeData`, `getFilterOptions`, `getProfile`, `listSources` | `@/server/queries` (solo Server Components) |
+| Acciones: `saveProfile`, `clearProfile` / `reportIssue` | `@/server/actions/profile` / `@/server/actions/report` |
+| Datos para prototipar sin servidor: `mockCards`, `mockCardsWithProfile`, `mockDetail`, `mockSearchResult`, `mockProfile` | `@/lib/mocks` |
+
+### Uso típico (página de resultados)
+```tsx
+// src/app/practicas/page.tsx
+import { Suspense } from "react";
+import { parseSearchParams } from "@/lib/contracts";
+import { searchOpportunities } from "@/server/queries";
+
+async function Results({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const result = await searchOpportunities(parseSearchParams(await searchParams));
+  return /* tarjetas, facetas (result.facets), paginación (result.totalPages) */;
+}
+
+export default function Page(props: PageProps<"/practicas">) {
+  return <Suspense fallback={<ResultsSkeleton />}><Results searchParams={props.searchParams} /></Suspense>;
+}
+```
+
+### Comportamientos que la UI debe conocer
+- **Datos de prueba que cubren todos los casos:** una oferta que cierra hoy, una que cierra mañana, varias que cierran en ≤ 7 días, una `hasta_agotar_cupos`, una `no_publicada`, una 100% remota, una exclusiva de ciertas instituciones, una `isStale`, una vencida (visible solo por URL: `/practicas/practica-comunicacion-servicios-publicos-valle`) y una retirada (nunca aparece).
+- **Municipio:** al filtrar por municipio, las ofertas **remotas** siempre se incluyen.
+- **Facetas:** cada conteo se calcula sin aplicar el filtro de su propia faceta. Vienen todas las opciones, incluso con `count: 0`, y la UI decide si las oculta.
+- **`eligibleOnly` (`aplico=1`):** excluye solo las `no_cumple`. Sin perfil se ignora y `appliedProfile` sale en `false`.
+- **Orden `relevancia`:** primero el puntaje de texto, luego elegibilidad (`cumple` primero), luego la fecha de cierre más próxima.
+- **`getOpportunity`:** devuelve `null` si no existe o fue retirada (→ `notFound()`). Las vencidas se devuelven con `status: "vencida"`.
+- **`requirements.programs`:** incluye también áreas aceptadas, con nombre "Área: …".
+- **`saveProfile`:** valida que el `level` coincida con el nivel del programa elegido. En `fieldErrors` las claves son los nombres de campo (`programId`, `level`…).
+- **Mensajes de "¿Aplico?":** usa `check.message` por defecto, o mapea `check.code` (lista completa en `src/lib/contracts/eligibility.ts`) para escribir tu propio texto. Muestra siempre `ELIGIBILITY_DISCLAIMER`.
+
+### Resumen de tipos (v0.1)
 ```ts
 // ---- Búsqueda ----
 interface SearchParams {
@@ -309,8 +363,10 @@ interface SearchResult {
   total: number;
   page: number;
   pageSize: number;
+  totalPages: number;
   facets: Record<'types' | 'levels' | 'municipalities' | 'modalities', { value: string; label: string; count: number }[]>;
   appliedProfile: boolean;          // true si se evaluó la elegibilidad
+  params: NormalizedSearchParams;   // filtros efectivos (para chips de filtros activos)
 }
 
 interface OpportunityCard {
@@ -331,7 +387,7 @@ interface OpportunityCard {
   eligibility: { verdict: EligibilityVerdict } | null;
 }
 
-interface OpportunityDetail extends OpportunityCard {
+interface OpportunityDetail extends OpportunityCard {   // + sources: {name,url}[], publishedAt
   description: string;              // resumen propio, no copia íntegra de la fuente
   requirements: { semesterMin: number | null; semesterMax: number | null; programs: { id: string; name: string }[];
                   acceptsRelatedPrograms: boolean; institutions: { id: string; name: string }[] | null; other: string[] };
@@ -356,12 +412,12 @@ type ActionResult<T> =
   | { ok: false; error: { code: string; message: string; fieldErrors?: Record<string, string> } };
 
 // ---- Funciones (src/server/queries | actions) ----
-getHomeData(): Promise<{ closingSoon: OpportunityCard[]; recent: OpportunityCard[]; totals: { active: number; sources: number } }>
+getHomeData(): Promise<{ closingSoon: OpportunityCard[]; recent: OpportunityCard[]; totals: { active: number; sources: number; organizations: number } }>
 searchOpportunities(params: SearchParams): Promise<SearchResult>
 getOpportunity(slug: string): Promise<OpportunityDetail | null>
-getFilterOptions(): Promise<{ institutions: Option[]; programs: (Option & { institutionId: string; level: EducationLevel })[]; municipalities: Option[] }>
+getFilterOptions(): Promise<FilterOptions>  // institutions (con levels), programs (con level, knowledgeAreaId, institutionIds), municipalities, types, levels, modalities
 getProfile(): Promise<StudentProfile | null>
-saveProfile(input: StudentProfile): Promise<ActionResult<StudentProfile>>
+saveProfile(input: StudentProfileInput): Promise<ActionResult<StudentProfile>>
 clearProfile(): Promise<ActionResult<null>>
 reportIssue(input: { opportunityId: string; reason: 'vencida' | 'enlace_roto' | 'datos_incorrectos' | 'sospechosa' | 'otro'; comment?: string }): Promise<ActionResult<null>>
 listSources(): Promise<{ name: string; url: string; method: 'api' | 'scraping' | 'manual'; lastRunAt: string | null; activeCount: number }[]>
@@ -385,7 +441,8 @@ listSources(): Promise<{ name: string; url: string; method: 'api' | 'scraping' |
 
 `municipalities` · `institutions` · `programs` (→ institution, level, nbc) · `knowledge_areas` (NBC) · `organizations` · `sources` · `raw_items` (payload crudo, hash, source, fetched_at) · `opportunities` (todos los campos de §11, más `status`, `dedupe_hash`, `needs_review`, `first_seen_at`, `last_verified_at`, `search_vector`) · `opportunity_levels` · `opportunity_programs` · `opportunity_knowledge_areas` · `opportunity_institutions` (restricción opcional) · `opportunity_sources` (N:M) · `issue_reports` · `admin_users`.
 v2: `student_accounts`, `saved_opportunities`, `saved_searches`, `notifications`.
-RLS: lectura pública solo de `publicada`. Escritura solo para el rol admin y el service role (ingesta).
+RLS: el público lee `publicada` y `vencida` (la vencida solo por su URL directa); escriben solo el rol admin y el service role (ingesta).
+Migración inicial: `supabase/migrations/20261113000000_init.sql` (se aplica en la Fase 1). El modelo interno en TS está en `src/server/domain/types.ts`.
 
 ---
 
@@ -425,8 +482,19 @@ RLS: lectura pública solo de `publicada`. Escritura solo para el rol admin y el
 
 | Fecha | Autor | Tipo | Descripción | Estado |
 |-------|-------|------|-------------|--------|
+| 2026-11-13 | Claude | Solicitud → Codex | **Fase 0/1 UI** (rama `codex/design-system`, partiendo de `main` cuando se mezcle `claude/fase-0`): (1) identidad visual y tokens en `globals.css`; instalar shadcn/ui. (2) **Tarjeta de oportunidad** con `mockCards`/`mockCardsWithProfile` (todos los estados de cierre y veredicto). (3) **`/practicas` en móvil** con filtros (drawer), chips, orden y paginación sobre `searchOpportunities`. (4) **`/practicas/[slug]`** con el desglose de "¿Aplico?". Respetar las reglas de Next 16 (§6) | Abierto |
+| 2026-11-13 | Claude | Decisión | Búsqueda en memoria (TS) para el MVP, en lugar de Postgres FTS desde el día 1 (§6). npm en lugar de pnpm. Se mantienen `cacheComponents` y `partialPrefetching` del scaffold de Next 16 | Cerrado |
+| 2026-11-13 | Claude | Entrega | **Fase 0, lado Claude** (rama `claude/fase-0`): scaffold Next 16.4 + Tailwind 4, contrato v0.1 (`src/lib/contracts`), catálogo (municipios, 20 instituciones, 31 programas, 14 NBC), motor "¿Aplico?", motor de búsqueda con facetas, 25 oportunidades de prueba ficticias, queries y actions (perfil en cookie, reportar error), migración SQL con RLS, 29 tests en verde, build OK | Cerrado |
 | 2026-11-13 | Claude | Pendiente PO | Confirmar las fuentes candidatas de §12 (cuáles se pueden usar legalmente) y conseguir 100–200 convocatorias para el seed | Abierto |
-| 2026-11-13 | Claude | Pendiente PO | Crear las cuentas de Supabase, Vercel y GitHub, e inicializar git (`git init`) | Abierto |
-| 2026-11-13 | Claude | Solicitud → Codex | Fase 0: proponer la identidad visual (nombre/logotipo, paleta, tipografía) y los tokens. Diseñar primero la **tarjeta de oportunidad** y la **página de resultados en móvil** usando los mocks | Abierto (esperando scaffold) |
-| 2026-11-13 | Claude | Entrega | Fase 0, lado Claude, planificada: scaffold Next.js + Supabase, contrato v0.1 en `src/lib/contracts`, mocks con `USE_MOCKS=true`, esquema inicial de BD | Próximo |
+| 2026-11-13 | Claude | Pendiente PO | Crear las cuentas de Supabase y Vercel (Fase 1). GitHub y git ya están listos | Abierto |
 | 2026-11-13 | Claude | Decisión | Se aprueban las decisiones D1–D9 (§2) con el PO. Stack (§6) y propiedad de carpetas (§7) definidos | Cerrado |
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
