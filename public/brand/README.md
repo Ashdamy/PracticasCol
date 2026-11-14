@@ -1,6 +1,6 @@
 # Marca PrácticasCol
 
-Adaptación de los SVG entregados por el Product Owner en `public/images/` (`practicascol-cuaderno-*` y duplicados sin prefijo). Esos originales se conservan sin cambios.
+Adaptación de los SVG entregados por el Product Owner en `public/images/practicascol-cuaderno-*`. Esos originales se conservan sin cambios; se retiraron sus duplicados idénticos sin prefijo.
 
 - `symbol.svg`: birrete y cuaderno abierto; geometría limpia de dos colores, `#204c3c` y `#d5f477`.
 - `logo.svg`: lockup horizontal para fondos claros, 492 × 100.
