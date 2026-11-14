@@ -25,6 +25,7 @@ import { date, deadline, money, semesterRange } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { EligibilityBadge } from "@/components/eligibility-badge";
 import { ResultsSkeleton } from "@/components/results-skeleton";
+import { OriginalPublicationLink } from "@/components/original-publication-link";
 // React cache only deduplicates within the request; eligibility is never shared.
 const readOpportunity = cache(getOpportunity);
 
@@ -35,7 +36,8 @@ export async function generateMetadata(
   const opportunity = await readOpportunity((await params).slug);
   if (!opportunity) notFound();
   const title = `${opportunity.title} en ${opportunity.organization.name} | PrácticasCol`;
-  const description = `${opportunity.organization.name}. ${opportunity.description}`;
+  const organization = opportunity.organization.name.trimEnd();
+  const description = `${organization}${organization.endsWith(".") ? "" : "."} ${opportunity.description}`;
   return {
     title,
     description,
@@ -181,9 +183,7 @@ async function Detail({ params }: { params: Promise<{ slug: string }> }) {
                 </li>
               ))}
             </ul>
-            <a href={o.sourceUrl} target="_blank" rel="noopener noreferrer">
-              Consultar publicación original <ArrowUpRight size={15} />
-            </a>
+            <OriginalPublicationLink opportunity={o} />
           </section>
         </article>
         <aside className="detail-sidebar">

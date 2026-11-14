@@ -12,7 +12,7 @@ const font = createFont(await readFile(
 const forest = "#204c3c";
 const lime = "#d5f477";
 
-// Reconstructed from the owner's public/images/symbol.svg: mortarboard and notebook.
+// Reconstructed from the owner's public/images/practicascol-cuaderno-symbol.svg: mortarboard and notebook.
 // Flat two-colour geometry; no embedded raster, filters, fonts or external resources.
 function symbol({ dark = false, small = false } = {}) {
   return `<rect width="100" height="100" rx="22" fill="${forest}"/>

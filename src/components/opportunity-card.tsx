@@ -18,6 +18,7 @@ import {
 import { date, deadline, money } from "@/lib/format";
 import { EligibilityBadge } from "./eligibility-badge";
 import { Badge } from "./ui/badge";
+import { OriginalPublicationLink } from "./original-publication-link";
 export function OpportunityCard({ opportunity: o }: { opportunity: Card }) {
   return (
     <article className="opportunity-card">
@@ -69,6 +70,7 @@ export function OpportunityCard({ opportunity: o }: { opportunity: Card }) {
           <br />
           {o.isStale ? "Pendiente de actualizar" : "Última verificación"}:{" "}
           {date(o.lastVerifiedAt)}
+          <OriginalPublicationLink opportunity={o} />
         </span>
       </div>
     </article>

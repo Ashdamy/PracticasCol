@@ -11,6 +11,7 @@ import {
 } from "@/lib/catalog/labels";
 import { date, deadline, money } from "@/lib/format";
 import { EligibilityBadge } from "./eligibility-badge";
+import { OriginalPublicationLink } from "./original-publication-link";
 
 export function OpportunityListItem({ opportunity: o }: { opportunity: Card }) {
   const initials = o.organization.name
@@ -78,8 +79,9 @@ export function OpportunityListItem({ opportunity: o }: { opportunity: Card }) {
         </div>
         <div className="card-source">
           <ShieldCheck size={13} aria-hidden="true" />
-          <span>{o.source.name}</span>
-          <span>
+          <span className="source-name">{o.source.name}</span>
+          <OriginalPublicationLink opportunity={o} />
+          <span className="source-date">
             {o.isStale ? "Pendiente de actualizar" : "Verificada"}:{" "}
             {date(o.lastVerifiedAt)}
           </span>

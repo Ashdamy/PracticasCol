@@ -7,6 +7,9 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import "./globals.css";
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+  ),
   title: "PrácticasCol",
   description:
     "Prácticas, pasantías y contratos de aprendizaje en el Valle de Aburrá.",

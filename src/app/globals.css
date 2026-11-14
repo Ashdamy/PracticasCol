@@ -563,6 +563,22 @@ input[type="checkbox"] {
 .card-source svg {
   margin-top: 2px;
 }
+.original-publication-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.original-publication-link:hover {
+  text-decoration-thickness: 2px;
+}
+.original-publication-link svg {
+  flex-shrink: 0;
+  margin-top: 0;
+}
 .active-filters {
   display: flex;
   gap: 8px;
@@ -1474,7 +1490,7 @@ h1 {
   flex-wrap: wrap;
   gap: 4px 7px;
 }
-.opportunity-row .card-source span:last-child {
+.opportunity-row .card-source > .source-date {
   margin-left: auto;
 }
 .deadline {
@@ -1842,9 +1858,13 @@ h1 {
     align-items: flex-start;
     gap: 5px;
   }
-  .opportunity-row .card-source span:last-child {
+  .opportunity-row .card-source > .source-date {
     margin-left: 18px;
     width: 100%;
+  }
+  .opportunity-row .original-publication-link {
+    margin-left: 18px;
+    flex-basis: calc(100% - 18px);
   }
   .compensation {
     font-size: 15px;
