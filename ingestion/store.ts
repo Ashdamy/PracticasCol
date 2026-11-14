@@ -18,6 +18,8 @@ export interface UpsertOptions {
   /** Si viene, actualiza esa oportunidad; si no, crea una nueva. */
   existingId?: string;
   reviewNotes?: string[];
+  /** Fuerza la marca de revisión aunque el estado no sea `en_revision` (p. ej. una publicada que cambió con dudas). */
+  needsReview?: boolean;
   /** ISO datetime de la corrida (para `publishedAt` y `lastVerifiedAt`). */
   now?: string;
 }
@@ -107,7 +109,7 @@ export function createMemoryStore(seed: MemoryStoreSeed = {}): MemoryStore {
         organizationName: name,
         publishedAt: previous?.publishedAt ?? now,
         lastVerifiedAt: now,
-        needsReview: fields.status === "en_revision",
+        needsReview: options.needsReview ?? fields.status === "en_revision",
         reviewNotes: options.reviewNotes ?? [],
       };
       if (previous) opportunities[index] = stored;

@@ -110,3 +110,27 @@ describe("normalizeDate", () => {
     expect(result.confidence).toBe("baja");
   });
 });
+
+describe("normalizeDeadline con varias fechas", () => {
+  it.each([
+    ["Del 1 de noviembre al 15 de diciembre de 2026", "2026-12-15"],
+    ["Del 01/11/2026 al 30/11/2026", "2026-11-30"],
+    ["Inscripciones: 20 de noviembre de 2026 - 5 de diciembre de 2026", "2026-12-05"],
+  ])("%j → toma la última (%s) con confianza media", (text, date) => {
+    const r = normalizeDeadline(text, "2026-11-13");
+    expect(r.value).toEqual({ type: "fecha", date });
+    expect(r.confidence).toBe("media");
+    expect(r.note).toContain("varias fechas");
+  });
+
+  it("una sola fecha con hora o con rango de días no cuenta como varias", () => {
+    expect(normalizeDeadline("15/12/2026 a las 5:00 p. m.", "2026-11-13")).toEqual({
+      value: { type: "fecha", date: "2026-12-15" },
+      confidence: "alta",
+    });
+    expect(normalizeDeadline("Del 1 al 15 de diciembre de 2026", "2026-11-13")).toEqual({
+      value: { type: "fecha", date: "2026-12-15" },
+      confidence: "alta",
+    });
+  });
+});

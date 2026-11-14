@@ -242,7 +242,7 @@ export function normalizeDraft(draft: OpportunityDraft, options: NormalizeOption
     applyUrl,
     sources: [{ sourceId, url: sourceUrl }],
     status,
-    };
+  };
 
   return { candidate, issues, confidence, needsReview: status === "en_revision", fieldConfidence };
 }

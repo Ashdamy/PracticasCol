@@ -199,16 +199,20 @@ export async function runIngestion(options: RunIngestionOptions): Promise<Ingest
             status: statusForUpdate(existing.status, candidate.status),
             sources: mergeSources(existing.sources, candidate.sources),
           };
+          // Una publicada que cambia con dudas sigue visible, pero queda marcada para que una persona la mire.
+          const needsReview =
+            updated.status === "en_revision" || (updated.status === "publicada" && normalized.issues.length > 0);
           const stored = dryRun
-            ? { ...existing, ...updated, lastVerifiedAt: nowIso }
+            ? { ...existing, ...updated, lastVerifiedAt: nowIso, needsReview, reviewNotes: normalized.issues }
             : await store.upsertOpportunity(updated, {
                 existingId: existing.id,
                 reviewNotes: normalized.issues,
+                needsReview,
                 now: nowIso,
               });
           Object.assign(existing, stored);
           report.updated += 1;
-          if (updated.status === "en_revision") report.needsReview += 1;
+          if (needsReview) report.needsReview += 1;
           if (candidate.status === "vencida") report.expired += 1;
           item.outcome = "actualizada";
           item.status = updated.status;

@@ -31,8 +31,9 @@ export type CsvRow = Partial<Record<CsvColumn, string>>;
 
 const REQUIRED_COLUMNS: readonly CsvColumn[] = ["titulo", "organizacion"];
 
-/** Cuenta separadores fuera de comillas en la primera línea. */
-export function detectDelimiter(text: string): "," | ";" {
+/** Cuenta separadores fuera de comillas en la primera línea con contenido. */
+export function detectDelimiter(input: string): "," | ";" {
+  const text = input.replace(/^[\ufeff\s]+/, "");
   let commas = 0;
   let semicolons = 0;
   let quoted = false;

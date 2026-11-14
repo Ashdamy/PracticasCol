@@ -63,6 +63,9 @@ function describeItem(item: IngestionItemResult): string {
   const status = item.status ? STATUS_LABELS[item.status] : "—";
   const lines = [`• ${row}: ${item.title ?? "(sin título)"} [${status}, confianza ${item.confidence ?? "—"}]`];
   for (const issue of item.issues) lines.push(`    - ${issue}`);
+  if (item.status === "en_revision" && item.issues.length === 0) {
+    lines.push("    - Sin observaciones: queda en revisión porque esta carga no publica automáticamente");
+  }
   return lines.join("\n");
 }
 

@@ -110,7 +110,7 @@ export function parseRobots(content: string, userAgent: string): RobotsPolicy {
   }
 
   const token = userAgent.split(/[/\s]/)[0].toLowerCase();
-  const own = groups.filter((g) => g.agents.some((a) => a !== "*" && token.includes(a)));
+  const own = groups.filter((g) => g.agents.some((a) => a !== "" && a !== "*" && token.includes(a)));
   const selected = own.length > 0 ? own : groups.filter((g) => g.agents.includes("*"));
   const rules = selected.flatMap((g) => g.rules).map((r) => ({ ...r, re: patternToRegExp(r.pattern) }));
   const delays = selected.map((g) => g.crawlDelayMs).filter((d): d is number => d !== null);

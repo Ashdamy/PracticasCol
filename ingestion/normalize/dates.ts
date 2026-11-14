@@ -37,17 +37,19 @@ interface Parts {
   month: number;
   day: number;
   note?: string;
+  /** Posición en el texto donde termina la fecha encontrada. */
+  end: number;
 }
 
 function parseParts(f: string): Parts | null {
   let m = YMD_RE.exec(f);
-  if (m) return { year: Number(m[1]), month: Number(m[2]), day: Number(m[3]) };
+  if (m) return { year: Number(m[1]), month: Number(m[2]), day: Number(m[3]), end: m.index + m[0].length };
 
   m = DMY_RE.exec(f);
   if (m) {
     let day = Number(m[1]);
     let month = Number(m[2]);
-    const parts: Parts = { year: Number(m[3]), month, day };
+    const parts: Parts = { year: Number(m[3]), month, day, end: m.index + m[0].length };
     if (m[3].length === 2) {
       parts.year = 2000 + Number(m[3]);
       parts.note = "Año de dos dígitos: se asumió 20xx";
@@ -63,13 +65,13 @@ function parseParts(f: string): Parts | null {
   }
 
   m = DAY_MONTH_RE.exec(f);
-  if (m) return { year: m[3] ? Number(m[3]) : null, month: MONTHS[m[2]], day: Number(m[1]) };
+  if (m) return { year: m[3] ? Number(m[3]) : null, month: MONTHS[m[2]], day: Number(m[1]), end: m.index + m[0].length };
 
   m = MONTH_DAY_RE.exec(f);
-  if (m) return { year: m[3] ? Number(m[3]) : null, month: MONTHS[m[1]], day: Number(m[2]) };
+  if (m) return { year: m[3] ? Number(m[3]) : null, month: MONTHS[m[1]], day: Number(m[2]), end: m.index + m[0].length };
 
   m = DM_RE.exec(f);
-  if (m) return { year: null, month: Number(m[2]), day: Number(m[1]) };
+  if (m) return { year: null, month: Number(m[2]), day: Number(m[1]), end: m.index + m[0].length };
 
   return null;
 }
@@ -86,10 +88,45 @@ type Resolved =
   | { kind: "invalid" }
   | { kind: "none" };
 
-/** Interpreta la primera fecha que encuentre en el texto (ya pasado por `fold`). */
-function resolve(f: string, today: string | undefined): Resolved {
+const SEVERAL_DATES_NOTE = "La fuente menciona varias fechas: se tomó la última como cierre";
+
+/** Todas las fechas del texto, en orden (máx. 6 para no recorrer textos enormes). */
+function parseAllParts(f: string): Parts[] {
+  const all: Parts[] = [];
+  let rest = f;
+  while (all.length < 6) {
+    const parts = parseParts(rest);
+    if (!parts) break;
+    all.push(parts);
+    rest = rest.slice(parts.end);
+  }
+  return all;
+}
+
+/**
+ * Interpreta una fecha del texto (ya pasado por `fold`).
+ * `pick: "last"` sirve para rangos ("del 1 de noviembre al 15 de diciembre"): el cierre es la última fecha.
+ */
+function resolve(f: string, today: string | undefined, pick: "first" | "last" = "first"): Resolved {
+  if (pick === "last") {
+    const all = parseAllParts(f);
+    if (all.length > 1) {
+      const last = resolveParts(all[all.length - 1], today);
+      if (last.kind !== "ok") return last;
+      return {
+        kind: "ok",
+        date: last.date,
+        confidence: last.confidence === "baja" ? "baja" : "media",
+        note: last.note ? `${SEVERAL_DATES_NOTE}. ${last.note}` : SEVERAL_DATES_NOTE,
+      };
+    }
+  }
   const parts = parseParts(f);
   if (!parts) return { kind: "none" };
+  return resolveParts(parts, today);
+}
+
+function resolveParts(parts: Parts, today: string | undefined): Resolved {
 
   if (parts.year !== null) {
     const date = toIso(parts.year, parts.month, parts.day);
@@ -133,7 +170,7 @@ export function normalizeDeadline(text: string | null | undefined, today: string
   if (isBlank(text)) return result({ type: "no_publicada", date: null }, "alta");
   const f = fold(text);
 
-  const resolved = resolve(f, today);
+  const resolved = resolve(f, today, "last");
   if (resolved.kind === "ok") {
     return result({ type: "fecha", date: resolved.date }, resolved.confidence, resolved.note);
   }

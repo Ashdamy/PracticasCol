@@ -93,7 +93,7 @@ export interface IngestionReport {
   duplicates: number;
   /** Duplicados probables: se crearon en revisión con una nota. */
   probableDuplicates: number;
-  /** Creados o actualizados que quedaron `en_revision`. */
+  /** Creados o actualizados que necesitan revisión humana (`en_revision`, o publicados que cambiaron con dudas). */
   needsReview: number;
   /** Llegaron con la fecha límite ya vencida (los nuevos no se crean). */
   expired: number;
