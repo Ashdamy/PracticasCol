@@ -1,36 +1,36 @@
-/**
- * PLACEHOLDER de Fase 0 (Claude). Solo verifica que el contrato y los mocks funcionan.
- * Codex: reemplaza este archivo por la página de inicio real.
- * Patrón obligatorio con cacheComponents: los datos de "@/server/queries" van dentro de <Suspense>.
- */
-import { Suspense } from "react";
+﻿import { Suspense } from "react";
+import Link from "next/link";
 import { getHomeData } from "@/server/queries";
-
-async function Totals() {
-  const { totals, closingSoon } = await getHomeData();
+import { HomeHero } from "@/components/home-hero";
+import { OpportunityListItem } from "@/components/opportunity-list";
+import { ResultsSkeleton } from "@/components/results-skeleton";
+async function ClosingSoon() {
+  const { closingSoon, totals } = await getHomeData();
   return (
-    <div>
-      <p>
-        {totals.active} convocatorias activas · {totals.organizations} organizaciones · {totals.sources} fuentes
+    <div className="content home-opportunities">
+      <div className="section-heading">
+        <h2>Prácticas que cierran pronto</h2>
+        <Link className="clear-link" href="/practicas?orden=cierre">
+          Ver todas las prácticas
+        </Link>
+      </div>
+      <p style={{ marginBlock: "12px 24px" }}>
+        {totals.active} convocatorias de {totals.sources} fuentes.
       </p>
-      <ul>
-        {closingSoon.map((o) => (
-          <li key={o.id}>
-            {o.title} — {o.organization.name} (cierra en {o.deadline.daysLeft} días)
-          </li>
+      <div className="opportunity-list">
+        {closingSoon.slice(0, 4).map((o) => (
+          <OpportunityListItem key={o.id} opportunity={o} />
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
-
 export default function Home() {
   return (
-    <main style={{ padding: 24, fontFamily: "system-ui" }}>
-      <h1>PrácticasCol</h1>
-      <p>Fase 0 · datos de prueba (USE_MOCKS=true)</p>
-      <Suspense fallback={<p>Cargando…</p>}>
-        <Totals />
+    <main id="main">
+      <HomeHero />
+      <Suspense fallback={<ResultsSkeleton />}>
+        <ClosingSoon />
       </Suspense>
     </main>
   );

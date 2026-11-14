@@ -1,0 +1,730 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-13T20:09:03.663Z",
+  "title": "Design System: PrácticasCol",
+  "extensions": {
+    "homeHero": {
+      "surface": ".impeccable/surfaces/home.md",
+      "background": "{colors.lime}",
+      "foreground": "{colors.foreground}",
+      "emphasisBackground": "{colors.forest-panel}",
+      "emphasisForeground": "{colors.lime}",
+      "displaySize": "clamp(48px, 5.2vw, 76px)",
+      "mobileDisplaySize": "clamp(38px, 10vw, 64px)",
+      "lineHeight": 1.13,
+      "mobileLineHeight": 1.16,
+      "image": "public/images/students-first-step.webp",
+      "imageProvenance": "public/images/students-first-step.webp.json",
+      "layout": "Título y búsqueda en dos columnas, ilustración panorámica debajo y franja de accesos por nivel. Apilado en móvil.",
+      "theme": "Superficie lima con tinta bosque en ambos temas. Sustituye el patrón starting-point en la portada."
+    },
+    "colorMeta": {
+      "background": {
+        "role": "neutral",
+        "displayName": "Lienzo verde claro",
+        "tonalRamp": [
+          "oklch(15% 0.0045 134.85)",
+          "oklch(25% 0.0045 134.85)",
+          "oklch(35% 0.0045 134.85)",
+          "oklch(45% 0.0045 134.85)",
+          "oklch(60% 0.0045 134.85)",
+          "oklch(75% 0.0045 134.85)",
+          "oklch(87% 0.0045 134.85)",
+          "oklch(95% 0.0045 134.85)"
+        ]
+      },
+      "foreground": {
+        "role": "neutral",
+        "displayName": "Tinta bosque",
+        "tonalRamp": [
+          "oklch(15% 0.0270 168.99)",
+          "oklch(25% 0.0282 168.99)",
+          "oklch(35% 0.0282 168.99)",
+          "oklch(45% 0.0282 168.99)",
+          "oklch(60% 0.0282 168.99)",
+          "oklch(75% 0.0282 168.99)",
+          "oklch(87% 0.0282 168.99)",
+          "oklch(95% 0.0282 168.99)"
+        ]
+      },
+      "card": {
+        "role": "neutral",
+        "displayName": "card",
+        "tonalRamp": [
+          "oklch(15% 0.0000 89.88)",
+          "oklch(25% 0.0000 89.88)",
+          "oklch(35% 0.0000 89.88)",
+          "oklch(45% 0.0000 89.88)",
+          "oklch(60% 0.0000 89.88)",
+          "oklch(75% 0.0000 89.88)",
+          "oklch(87% 0.0000 89.88)",
+          "oklch(95% 0.0000 89.88)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "muted",
+        "tonalRamp": [
+          "oklch(15% 0.0086 128.56)",
+          "oklch(25% 0.0086 128.56)",
+          "oklch(35% 0.0086 128.56)",
+          "oklch(45% 0.0086 128.56)",
+          "oklch(60% 0.0086 128.56)",
+          "oklch(75% 0.0086 128.56)",
+          "oklch(87% 0.0086 128.56)",
+          "oklch(95% 0.0086 128.56)"
+        ]
+      },
+      "muted-foreground": {
+        "role": "neutral",
+        "displayName": "muted-foreground",
+        "tonalRamp": [
+          "oklch(15% 0.0202 158.60)",
+          "oklch(25% 0.0202 158.60)",
+          "oklch(35% 0.0202 158.60)",
+          "oklch(45% 0.0202 158.60)",
+          "oklch(60% 0.0202 158.60)",
+          "oklch(75% 0.0202 158.60)",
+          "oklch(87% 0.0202 158.60)",
+          "oklch(95% 0.0202 158.60)"
+        ]
+      },
+      "primary": {
+        "role": "primary",
+        "displayName": "Bosque",
+        "tonalRamp": [
+          "oklch(15% 0.0270 167.05)",
+          "oklch(25% 0.0450 167.05)",
+          "oklch(35% 0.0565 167.05)",
+          "oklch(45% 0.0565 167.05)",
+          "oklch(60% 0.0565 167.05)",
+          "oklch(75% 0.0565 167.05)",
+          "oklch(87% 0.0565 167.05)",
+          "oklch(95% 0.0325 167.05)"
+        ]
+      },
+      "primary-foreground": {
+        "role": "primary",
+        "displayName": "primary-foreground",
+        "tonalRamp": [
+          "oklch(15% 0.0000 89.88)",
+          "oklch(25% 0.0000 89.88)",
+          "oklch(35% 0.0000 89.88)",
+          "oklch(45% 0.0000 89.88)",
+          "oklch(60% 0.0000 89.88)",
+          "oklch(75% 0.0000 89.88)",
+          "oklch(87% 0.0000 89.88)",
+          "oklch(95% 0.0000 89.88)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "border",
+        "tonalRamp": [
+          "oklch(15% 0.0142 138.71)",
+          "oklch(25% 0.0142 138.71)",
+          "oklch(35% 0.0142 138.71)",
+          "oklch(45% 0.0142 138.71)",
+          "oklch(60% 0.0142 138.71)",
+          "oklch(75% 0.0142 138.71)",
+          "oklch(87% 0.0142 138.71)",
+          "oklch(95% 0.0142 138.71)"
+        ]
+      },
+      "ring": {
+        "role": "neutral",
+        "displayName": "ring",
+        "tonalRamp": [
+          "oklch(15% 0.0270 158.24)",
+          "oklch(25% 0.0450 158.24)",
+          "oklch(35% 0.0630 158.24)",
+          "oklch(45% 0.0810 158.24)",
+          "oklch(60% 0.0838 158.24)",
+          "oklch(75% 0.0838 158.24)",
+          "oklch(87% 0.0838 158.24)",
+          "oklch(95% 0.0325 158.24)"
+        ]
+      },
+      "lime": {
+        "role": "secondary",
+        "displayName": "Lima de avance",
+        "tonalRamp": [
+          "oklch(15% 0.0270 121.07)",
+          "oklch(25% 0.0450 121.07)",
+          "oklch(35% 0.0630 121.07)",
+          "oklch(45% 0.0810 121.07)",
+          "oklch(60% 0.1080 121.07)",
+          "oklch(75% 0.1350 121.07)",
+          "oklch(87% 0.0845 121.07)",
+          "oklch(95% 0.0325 121.07)"
+        ]
+      },
+      "positive": {
+        "role": "neutral",
+        "displayName": "positive",
+        "tonalRamp": [
+          "oklch(15% 0.0270 151.70)",
+          "oklch(25% 0.0450 151.70)",
+          "oklch(35% 0.0630 151.70)",
+          "oklch(45% 0.0803 151.70)",
+          "oklch(60% 0.0803 151.70)",
+          "oklch(75% 0.0803 151.70)",
+          "oklch(87% 0.0803 151.70)",
+          "oklch(95% 0.0325 151.70)"
+        ]
+      },
+      "positive-bg": {
+        "role": "neutral",
+        "displayName": "positive-bg",
+        "tonalRamp": [
+          "oklch(15% 0.0191 140.50)",
+          "oklch(25% 0.0191 140.50)",
+          "oklch(35% 0.0191 140.50)",
+          "oklch(45% 0.0191 140.50)",
+          "oklch(60% 0.0191 140.50)",
+          "oklch(75% 0.0191 140.50)",
+          "oklch(87% 0.0191 140.50)",
+          "oklch(95% 0.0191 140.50)"
+        ]
+      },
+      "warning": {
+        "role": "neutral",
+        "displayName": "warning",
+        "tonalRamp": [
+          "oklch(15% 0.0270 62.31)",
+          "oklch(25% 0.0450 62.31)",
+          "oklch(35% 0.0630 62.31)",
+          "oklch(45% 0.0810 62.31)",
+          "oklch(60% 0.0998 62.31)",
+          "oklch(75% 0.0998 62.31)",
+          "oklch(87% 0.0845 62.31)",
+          "oklch(95% 0.0325 62.31)"
+        ]
+      },
+      "warning-bg": {
+        "role": "neutral",
+        "displayName": "warning-bg",
+        "tonalRamp": [
+          "oklch(15% 0.0270 83.63)",
+          "oklch(25% 0.0300 83.63)",
+          "oklch(35% 0.0300 83.63)",
+          "oklch(45% 0.0300 83.63)",
+          "oklch(60% 0.0300 83.63)",
+          "oklch(75% 0.0300 83.63)",
+          "oklch(87% 0.0300 83.63)",
+          "oklch(95% 0.0300 83.63)"
+        ]
+      },
+      "negative": {
+        "role": "neutral",
+        "displayName": "negative",
+        "tonalRamp": [
+          "oklch(15% 0.0270 22.39)",
+          "oklch(25% 0.0450 22.39)",
+          "oklch(35% 0.0630 22.39)",
+          "oklch(45% 0.0810 22.39)",
+          "oklch(60% 0.1080 22.39)",
+          "oklch(75% 0.1141 22.39)",
+          "oklch(87% 0.0845 22.39)",
+          "oklch(95% 0.0325 22.39)"
+        ]
+      },
+      "negative-bg": {
+        "role": "neutral",
+        "displayName": "negative-bg",
+        "tonalRamp": [
+          "oklch(15% 0.0163 22.08)",
+          "oklch(25% 0.0163 22.08)",
+          "oklch(35% 0.0163 22.08)",
+          "oklch(45% 0.0163 22.08)",
+          "oklch(60% 0.0163 22.08)",
+          "oklch(75% 0.0163 22.08)",
+          "oklch(87% 0.0163 22.08)",
+          "oklch(95% 0.0163 22.08)"
+        ]
+      },
+      "accent-surface": {
+        "role": "neutral",
+        "displayName": "accent-surface",
+        "tonalRamp": [
+          "oklch(15% 0.0155 126.82)",
+          "oklch(25% 0.0155 126.82)",
+          "oklch(35% 0.0155 126.82)",
+          "oklch(45% 0.0155 126.82)",
+          "oklch(60% 0.0155 126.82)",
+          "oklch(75% 0.0155 126.82)",
+          "oklch(87% 0.0155 126.82)",
+          "oklch(95% 0.0155 126.82)"
+        ]
+      },
+      "panel-foreground": {
+        "role": "neutral",
+        "displayName": "panel-foreground",
+        "tonalRamp": [
+          "oklch(15% 0.0192 122.83)",
+          "oklch(25% 0.0192 122.83)",
+          "oklch(35% 0.0192 122.83)",
+          "oklch(45% 0.0192 122.83)",
+          "oklch(60% 0.0192 122.83)",
+          "oklch(75% 0.0192 122.83)",
+          "oklch(87% 0.0192 122.83)",
+          "oklch(95% 0.0192 122.83)"
+        ]
+      },
+      "panel-muted": {
+        "role": "neutral",
+        "displayName": "panel-muted",
+        "tonalRamp": [
+          "oklch(15% 0.0248 151.13)",
+          "oklch(25% 0.0248 151.13)",
+          "oklch(35% 0.0248 151.13)",
+          "oklch(45% 0.0248 151.13)",
+          "oklch(60% 0.0248 151.13)",
+          "oklch(75% 0.0248 151.13)",
+          "oklch(87% 0.0248 151.13)",
+          "oklch(95% 0.0248 151.13)"
+        ]
+      },
+      "panel-border": {
+        "role": "neutral",
+        "displayName": "panel-border",
+        "tonalRamp": [
+          "oklch(15% 0.0270 155.80)",
+          "oklch(25% 0.0450 155.80)",
+          "oklch(35% 0.0522 155.80)",
+          "oklch(45% 0.0522 155.80)",
+          "oklch(60% 0.0522 155.80)",
+          "oklch(75% 0.0522 155.80)",
+          "oklch(87% 0.0522 155.80)",
+          "oklch(95% 0.0325 155.80)"
+        ]
+      },
+      "dark-background": {
+        "role": "neutral",
+        "displayName": "dark-background",
+        "tonalRamp": [
+          "oklch(15% 0.0185 165.02)",
+          "oklch(25% 0.0185 165.02)",
+          "oklch(35% 0.0185 165.02)",
+          "oklch(45% 0.0185 165.02)",
+          "oklch(60% 0.0185 165.02)",
+          "oklch(75% 0.0185 165.02)",
+          "oklch(87% 0.0185 165.02)",
+          "oklch(95% 0.0185 165.02)"
+        ]
+      },
+      "dark-foreground": {
+        "role": "neutral",
+        "displayName": "dark-foreground",
+        "tonalRamp": [
+          "oklch(15% 0.0130 130.78)",
+          "oklch(25% 0.0130 130.78)",
+          "oklch(35% 0.0130 130.78)",
+          "oklch(45% 0.0130 130.78)",
+          "oklch(60% 0.0130 130.78)",
+          "oklch(75% 0.0130 130.78)",
+          "oklch(87% 0.0130 130.78)",
+          "oklch(95% 0.0130 130.78)"
+        ]
+      },
+      "dark-card": {
+        "role": "neutral",
+        "displayName": "dark-card",
+        "tonalRamp": [
+          "oklch(15% 0.0222 160.85)",
+          "oklch(25% 0.0222 160.85)",
+          "oklch(35% 0.0222 160.85)",
+          "oklch(45% 0.0222 160.85)",
+          "oklch(60% 0.0222 160.85)",
+          "oklch(75% 0.0222 160.85)",
+          "oklch(87% 0.0222 160.85)",
+          "oklch(95% 0.0222 160.85)"
+        ]
+      },
+      "dark-muted": {
+        "role": "neutral",
+        "displayName": "dark-muted",
+        "tonalRamp": [
+          "oklch(15% 0.0267 159.69)",
+          "oklch(25% 0.0267 159.69)",
+          "oklch(35% 0.0267 159.69)",
+          "oklch(45% 0.0267 159.69)",
+          "oklch(60% 0.0267 159.69)",
+          "oklch(75% 0.0267 159.69)",
+          "oklch(87% 0.0267 159.69)",
+          "oklch(95% 0.0267 159.69)"
+        ]
+      },
+      "dark-muted-foreground": {
+        "role": "neutral",
+        "displayName": "dark-muted-foreground",
+        "tonalRamp": [
+          "oklch(15% 0.0255 147.22)",
+          "oklch(25% 0.0255 147.22)",
+          "oklch(35% 0.0255 147.22)",
+          "oklch(45% 0.0255 147.22)",
+          "oklch(60% 0.0255 147.22)",
+          "oklch(75% 0.0255 147.22)",
+          "oklch(87% 0.0255 147.22)",
+          "oklch(95% 0.0255 147.22)"
+        ]
+      },
+      "dark-primary": {
+        "role": "primary",
+        "displayName": "dark-primary",
+        "tonalRamp": [
+          "oklch(15% 0.0270 121.07)",
+          "oklch(25% 0.0450 121.07)",
+          "oklch(35% 0.0630 121.07)",
+          "oklch(45% 0.0810 121.07)",
+          "oklch(60% 0.1080 121.07)",
+          "oklch(75% 0.1350 121.07)",
+          "oklch(87% 0.0845 121.07)",
+          "oklch(95% 0.0325 121.07)"
+        ]
+      },
+      "dark-primary-foreground": {
+        "role": "primary",
+        "displayName": "dark-primary-foreground",
+        "tonalRamp": [
+          "oklch(15% 0.0270 146.73)",
+          "oklch(25% 0.0433 146.73)",
+          "oklch(35% 0.0433 146.73)",
+          "oklch(45% 0.0433 146.73)",
+          "oklch(60% 0.0433 146.73)",
+          "oklch(75% 0.0433 146.73)",
+          "oklch(87% 0.0433 146.73)",
+          "oklch(95% 0.0325 146.73)"
+        ]
+      },
+      "dark-border": {
+        "role": "neutral",
+        "displayName": "dark-border",
+        "tonalRamp": [
+          "oklch(15% 0.0270 154.01)",
+          "oklch(25% 0.0346 154.01)",
+          "oklch(35% 0.0346 154.01)",
+          "oklch(45% 0.0346 154.01)",
+          "oklch(60% 0.0346 154.01)",
+          "oklch(75% 0.0346 154.01)",
+          "oklch(87% 0.0346 154.01)",
+          "oklch(95% 0.0325 154.01)"
+        ]
+      },
+      "dark-ring": {
+        "role": "neutral",
+        "displayName": "dark-ring",
+        "tonalRamp": [
+          "oklch(15% 0.0270 121.07)",
+          "oklch(25% 0.0450 121.07)",
+          "oklch(35% 0.0630 121.07)",
+          "oklch(45% 0.0810 121.07)",
+          "oklch(60% 0.1080 121.07)",
+          "oklch(75% 0.1350 121.07)",
+          "oklch(87% 0.0845 121.07)",
+          "oklch(95% 0.0325 121.07)"
+        ]
+      },
+      "dark-positive": {
+        "role": "neutral",
+        "displayName": "dark-positive",
+        "tonalRamp": [
+          "oklch(15% 0.0270 130.86)",
+          "oklch(25% 0.0450 130.86)",
+          "oklch(35% 0.0630 130.86)",
+          "oklch(45% 0.0810 130.86)",
+          "oklch(60% 0.1030 130.86)",
+          "oklch(75% 0.1030 130.86)",
+          "oklch(87% 0.0845 130.86)",
+          "oklch(95% 0.0325 130.86)"
+        ]
+      },
+      "dark-positive-bg": {
+        "role": "neutral",
+        "displayName": "dark-positive-bg",
+        "tonalRamp": [
+          "oklch(15% 0.0270 145.45)",
+          "oklch(25% 0.0450 145.45)",
+          "oklch(35% 0.0478 145.45)",
+          "oklch(45% 0.0478 145.45)",
+          "oklch(60% 0.0478 145.45)",
+          "oklch(75% 0.0478 145.45)",
+          "oklch(87% 0.0478 145.45)",
+          "oklch(95% 0.0325 145.45)"
+        ]
+      },
+      "dark-warning": {
+        "role": "neutral",
+        "displayName": "dark-warning",
+        "tonalRamp": [
+          "oklch(15% 0.0270 75.04)",
+          "oklch(25% 0.0450 75.04)",
+          "oklch(35% 0.0630 75.04)",
+          "oklch(45% 0.0810 75.04)",
+          "oklch(60% 0.0845 75.04)",
+          "oklch(75% 0.0845 75.04)",
+          "oklch(87% 0.0845 75.04)",
+          "oklch(95% 0.0325 75.04)"
+        ]
+      },
+      "dark-warning-bg": {
+        "role": "neutral",
+        "displayName": "dark-warning-bg",
+        "tonalRamp": [
+          "oklch(15% 0.0270 78.05)",
+          "oklch(25% 0.0322 78.05)",
+          "oklch(35% 0.0322 78.05)",
+          "oklch(45% 0.0322 78.05)",
+          "oklch(60% 0.0322 78.05)",
+          "oklch(75% 0.0322 78.05)",
+          "oklch(87% 0.0322 78.05)",
+          "oklch(95% 0.0322 78.05)"
+        ]
+      },
+      "dark-negative": {
+        "role": "neutral",
+        "displayName": "dark-negative",
+        "tonalRamp": [
+          "oklch(15% 0.0270 18.71)",
+          "oklch(25% 0.0450 18.71)",
+          "oklch(35% 0.0630 18.71)",
+          "oklch(45% 0.0713 18.71)",
+          "oklch(60% 0.0713 18.71)",
+          "oklch(75% 0.0713 18.71)",
+          "oklch(87% 0.0713 18.71)",
+          "oklch(95% 0.0325 18.71)"
+        ]
+      },
+      "dark-negative-bg": {
+        "role": "neutral",
+        "displayName": "dark-negative-bg",
+        "tonalRamp": [
+          "oklch(15% 0.0270 9.95)",
+          "oklch(25% 0.0325 9.95)",
+          "oklch(35% 0.0325 9.95)",
+          "oklch(45% 0.0325 9.95)",
+          "oklch(60% 0.0325 9.95)",
+          "oklch(75% 0.0325 9.95)",
+          "oklch(87% 0.0325 9.95)",
+          "oklch(95% 0.0325 9.95)"
+        ]
+      },
+      "dark-accent-surface": {
+        "role": "neutral",
+        "displayName": "dark-accent-surface",
+        "tonalRamp": [
+          "oklch(15% 0.0270 150.14)",
+          "oklch(25% 0.0380 150.14)",
+          "oklch(35% 0.0380 150.14)",
+          "oklch(45% 0.0380 150.14)",
+          "oklch(60% 0.0380 150.14)",
+          "oklch(75% 0.0380 150.14)",
+          "oklch(87% 0.0380 150.14)",
+          "oklch(95% 0.0325 150.14)"
+        ]
+      },
+      "forest-panel": {
+        "role": "primary",
+        "displayName": "Bosque de orientación",
+        "tonalRamp": [
+          "oklch(15% 0.0270 167.05)",
+          "oklch(25% 0.0450 167.05)",
+          "oklch(35% 0.0565 167.05)",
+          "oklch(45% 0.0565 167.05)",
+          "oklch(60% 0.0565 167.05)",
+          "oklch(75% 0.0565 167.05)",
+          "oklch(87% 0.0565 167.05)",
+          "oklch(95% 0.0325 167.05)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Título de portada",
+        "purpose": "Orientación con Bricolage Grotesque Variable local."
+      },
+      "headline": {
+        "displayName": "Cabecera de catálogo",
+        "purpose": "Título compacto de búsqueda."
+      },
+      "title": {
+        "displayName": "Título de convocatoria",
+        "purpose": "Enlace principal de filas comparables."
+      },
+      "body": {
+        "displayName": "Cuerpo",
+        "purpose": "Lectura y controles con Urbanist Variable local."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "button-state",
+        "value": "transform .18s ease, background .18s ease",
+        "purpose": "Ascenso 1px en hover y descenso 1px en active."
+      },
+      {
+        "name": "row-state",
+        "value": "transform .2s ease, border-color .2s ease",
+        "purpose": "Ascenso 2px y borde primario en hover."
+      },
+      {
+        "name": "arrow-state",
+        "value": "transform .2s ease, opacity .2s",
+        "purpose": "Flecha de fila avanza 2px; acceso por nivel avanza 4px."
+      },
+      {
+        "name": "arrive",
+        "value": ".5s cubic-bezier(.2,.7,.2,1)",
+        "purpose": "Entrada data-enter desde translateY(8px)."
+      },
+      {
+        "name": "pulse",
+        "value": "1.5s ease-in-out infinite alternate",
+        "purpose": "Skeleton con cambio de opacidad."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}}",
+        "purpose": "Respeta la preferencia del dispositivo."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact-desktop",
+        "value": "max-width:1100px"
+      },
+      {
+        "name": "mobile",
+        "value": "max-width:767px"
+      },
+      {
+        "name": "small-mobile",
+        "value": "max-width:360px"
+      }
+    ],
+    "focus": {
+      "global": "outline:3px solid var(--ring);outline-offset:4px",
+      "search": "outline:2px solid var(--ring);outline-offset:3px"
+    },
+    "theme": {
+      "initial": "light",
+      "selector": ":root[data-theme=\"dark\"]",
+      "activation": "Botón explícito; estado local del componente sin persistencia.",
+      "mapping": "Tokens dark-* sustituyen roles semánticos; paneles verdes conservan bosque y texto claro."
+    },
+    "overlay": {
+      "overlayZIndex": 40,
+      "panelZIndex": 50,
+      "panelWidth": "min(440px,100%)"
+    },
+    "responsive": {
+      "mobileCatalog": "Cabecera (20px 18px), título (31px), conteo y orden en una fila. Se ocultan texto auxiliar e invitación al perfil de resultados; Mi perfil permanece en cabecera."
+    }
+  },
+  "components": [
+    {
+      "name": "Botón principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción de formulario o navegación con respuesta al pulso.",
+      "html": "<button class=\"ds-primary\">Buscar prácticas<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" aria-hidden=\"true\"><path d=\"M7 17 17 7M7 7h10v10\"/></svg></button>",
+      "css": ".ds-primary{font-family:var(--font-text,\"Urbanist Variable\",sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:11px 18px;border:1px solid transparent;border-radius:9px;background:var(--primary,#204c3c);color:var(--primary-foreground,#fff);font-size:14px;font-weight:650;cursor:pointer;transition:transform .18s ease,background .18s ease}.ds-primary:hover{transform:translateY(-1px);filter:brightness(.93)}.ds-primary:active{transform:translateY(1px)}.ds-primary:focus-visible{outline:3px solid var(--ring,#387655);outline-offset:4px}.ds-primary:disabled{opacity:.6;cursor:not-allowed}@media(prefers-reduced-motion:reduce){.ds-primary{transition:none}}"
+    },
+    {
+      "name": "Botón de contorno",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Acción de formulario o navegación con respuesta al pulso.",
+      "html": "<button class=\"ds-outline\">Buscar prácticas<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" aria-hidden=\"true\"><path d=\"M7 17 17 7M7 7h10v10\"/></svg></button>",
+      "css": ".ds-outline{font-family:var(--font-text,\"Urbanist Variable\",sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:11px 18px;border:1px solid var(--border,#dce3da);border-radius:9px;background:var(--card,#fff);color:var(--foreground,#192c25);font-size:14px;font-weight:650;cursor:pointer;transition:transform .18s ease,background .18s ease}.ds-outline:hover{transform:translateY(-1px);filter:brightness(.93)}.ds-outline:active{transform:translateY(1px)}.ds-outline:focus-visible{outline:3px solid var(--ring,#387655);outline-offset:4px}.ds-outline:disabled{opacity:.6;cursor:not-allowed}@media(prefers-reduced-motion:reduce){.ds-outline{transition:none}}"
+    },
+    {
+      "name": "Botón transparente",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Acción de formulario o navegación con respuesta al pulso.",
+      "html": "<button class=\"ds-ghost\">Buscar prácticas<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" aria-hidden=\"true\"><path d=\"M7 17 17 7M7 7h10v10\"/></svg></button>",
+      "css": ".ds-ghost{font-family:var(--font-text,\"Urbanist Variable\",sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:11px 18px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--foreground,#192c25);font-size:14px;font-weight:650;cursor:pointer;transition:transform .18s ease,background .18s ease}.ds-ghost:hover{transform:translateY(-1px);filter:brightness(.93)}.ds-ghost:active{transform:translateY(1px)}.ds-ghost:focus-visible{outline:3px solid var(--ring,#387655);outline-offset:4px}.ds-ghost:disabled{opacity:.6;cursor:not-allowed}@media(prefers-reduced-motion:reduce){.ds-ghost{transition:none}}"
+    },
+    {
+      "name": "Buscador",
+      "kind": "input",
+      "refersTo": "search",
+      "description": "Entrada flexible y acción en la misma línea.",
+      "html": "<div class=\"ds-search\"><input aria-label=\"Buscar prácticas\" placeholder=\"¿Qué estás estudiando?\"/><button>Buscar</button></div>",
+      "css": ".ds-search{font-family:var(--font-text,\"Urbanist Variable\",sans-serif);display:flex;align-items:center;gap:14px;border:1px solid var(--border,#dce3da);border-radius:14px;padding:8px 9px 8px 20px;background:var(--card,#fff)}.ds-search input{flex:1;width:0;min-height:44px;min-width:0;border:0;outline:none;background:transparent;color:var(--foreground,#192c25);font:inherit}.ds-search input::placeholder{color:var(--muted-foreground,#5b6860)}.ds-search:focus-within{outline:2px solid var(--ring,#387655);outline-offset:3px}.ds-search button{border:0;border-radius:9px;min-height:46px;padding:11px 18px;background:var(--primary,#204c3c);color:var(--primary-foreground,#fff);font:inherit;font-size:14px;font-weight:650;cursor:pointer}.ds-search button:hover{filter:brightness(.93)}.ds-search button:active{transform:translateY(1px)}.ds-search button:focus-visible{outline:3px solid var(--ring,#387655);outline-offset:4px}"
+    },
+    {
+      "name": "Filtro rápido",
+      "kind": "chip",
+      "refersTo": "quick-filter",
+      "description": "Cápsulas por tipo con selección contrastada.",
+      "html": "<nav class=\"ds-chips\" aria-label=\"Tipo\"><a href=\"#todos\" aria-current=\"page\">Todas</a><a href=\"#aprendizaje\">Contrato de aprendizaje</a></nav>",
+      "css": ".ds-chips{display:flex;flex-wrap:wrap;gap:8px}.ds-chips a{font-family:var(--font-text,\"Urbanist Variable\",sans-serif);display:flex;align-items:center;min-height:40px;padding:8px 16px;border:1px solid var(--border,#dce3da);border-radius:30px;background:var(--card,#fff);color:var(--foreground,#192c25);font-size:12px;font-weight:600;text-decoration:none}.ds-chips a[aria-current]{background:var(--foreground,#192c25);border-color:var(--foreground,#192c25);color:var(--background,#f8faf7)}.ds-chips a:hover{background:var(--muted,#edf0ea);color:var(--foreground,#192c25)}.ds-chips a:focus-visible{outline:3px solid var(--ring,#387655);outline-offset:4px}@media(max-width:767px){.ds-chips a{min-height:44px}}"
+    },
+    {
+      "name": "Fila de oportunidad",
+      "kind": "card",
+      "refersTo": "opportunity-row",
+      "description": "Organización, título, remuneración y trazabilidad comparables.",
+      "html": "<article class=\"ds-row\"><span class=\"ds-initials\" aria-hidden=\"true\">OV</span><div class=\"ds-row-body\"><p>Organización de ejemplo · convocatoria ficticia</p><h2><a href=\"#convocatoria\">Práctica en tu área <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" aria-hidden=\"true\"><path d=\"M7 17 17 7M7 7h10v10\"/></svg></a></h2><p>Medellín · Híbrida · Práctica profesional</p><strong>Apoyo por confirmar</strong><p class=\"ds-source\">Fuente oficial · Verificación pendiente</p></div></article>",
+      "css": ".ds-row{font-family:var(--font-text,\"Urbanist Variable\",sans-serif);display:flex;gap:18px;padding:24px;border:1px solid var(--border,#dce3da);border-radius:14px;background:var(--card,#fff);color:var(--foreground,#192c25);transition:transform .2s ease,border-color .2s ease}.ds-row:hover{transform:translateY(-2px);border-color:var(--primary,#204c3c)}.ds-initials{display:grid;place-items:center;flex-shrink:0;width:46px;height:46px;border-radius:12px;background:#eef0e9;color:#42533e;font-weight:600}.ds-row-body{flex:1;min-width:0}.ds-row p{font-size:13px;color:var(--muted-foreground,#5b6860);margin:0 0 10px}.ds-row h2{font-family:var(--font-display,\"Bricolage Grotesque Variable\",sans-serif);font-size:21px;line-height:1.25;letter-spacing:-.025em;margin:0 0 12px}.ds-row h2 a{display:flex;justify-content:space-between;gap:15px;color:inherit;text-decoration:none}.ds-row a:focus-visible{outline:3px solid var(--ring,#387655);outline-offset:4px}.ds-row strong{font-size:15px;font-weight:650}.ds-row .ds-source{border-top:1px solid var(--border,#dce3da);padding-top:10px;margin-top:15px;font-size:12px}@media(max-width:767px){.ds-row{padding:18px 16px;gap:11px}.ds-initials{width:35px;height:35px}.ds-row h2{font-size:20px}.ds-row p{font-size:12px}}@media(prefers-reduced-motion:reduce){.ds-row{transition:none}}"
+    },
+    {
+      "name": "Navegación",
+      "kind": "nav",
+      "description": "Enlaces con subrayado de avance y perfil en cápsula.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Navegación principal\"><a href=\"#practicas\">Buscar prácticas</a><a href=\"#fuentes\">Nuestras fuentes</a><a class=\"ds-profile\" href=\"#perfil\">Mi perfil</a></nav>",
+      "css": ".ds-nav{font-family:var(--font-text,\"Urbanist Variable\",sans-serif);display:flex;align-items:center;flex-wrap:wrap;gap:28px;color:var(--foreground,#192c25);font-size:14px;font-weight:600}.ds-nav a{position:relative;display:flex;align-items:center;min-height:44px;color:inherit;text-decoration:none}.ds-nav a:not(.ds-profile)::after{content:\"\";position:absolute;bottom:5px;height:2px;left:0;right:0;background:var(--primary,#204c3c);transform:scaleX(0);transform-origin:left;transition:transform .2s}.ds-nav a:hover::after{transform:scaleX(1)}.ds-nav a:focus-visible{outline:3px solid var(--ring,#387655);outline-offset:4px}.ds-nav .ds-profile{border:1px solid var(--border,#dce3da);border-radius:30px;padding:0 16px;background:var(--card,#fff)}@media(prefers-reduced-motion:reduce){.ds-nav a::after{transition:none}}"
+    },
+    {
+      "name": "Acceso por nivel",
+      "kind": "custom",
+      "refersTo": "starting-point",
+      "description": "Superficie verde con enlaces reales por formación.",
+      "html": "<section class=\"ds-start\"><h2>Empieza por lo que estudias.</h2><p>Encuentra oportunidades para tu formación.</p><a href=\"/practicas?nivel=tecnologo\">Soy tecnólogo/a <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" aria-hidden=\"true\"><path d=\"M7 17 17 7M7 7h10v10\"/></svg></a><a href=\"/practicas?nivel=universitario\">Soy universitario/a <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" aria-hidden=\"true\"><path d=\"M7 17 17 7M7 7h10v10\"/></svg></a></section>",
+      "css": ".ds-start{font-family:var(--font-text,\"Urbanist Variable\",sans-serif);padding:32px;border-radius:24px;background:#204c3c;color:#f2f7e9}.ds-start h2{font-family:var(--font-display,\"Bricolage Grotesque Variable\",sans-serif);font-size:30px;line-height:1.12;letter-spacing:-.035em;font-weight:500;margin:0}.ds-start p{font-size:13px;line-height:1.5;color:#c4d4c7;margin:14px 0 30px}.ds-start a{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:55px;border-top:1px solid #52745e;color:#f2f7e9;font-size:13px;text-decoration:none}.ds-start a:hover{color:var(--lime,#d5f477)}.ds-start a svg{transition:transform .2s}.ds-start a:hover svg{transform:translateX(4px)}.ds-start a:focus-visible{outline:3px solid var(--lime,#d5f477);outline-offset:4px}@media(max-width:767px){.ds-start{padding:26px;border-radius:20px}.ds-start h2{font-size:26px}}@media(prefers-reduced-motion:reduce){.ds-start a svg{transition:none}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "El próximo paso",
+    "overview": "Una identidad cercana que da dirección: titulares Bricolage Grotesque, texto Urbanist, tinta bosque y una señal lima para avanzar. La flecha ascendente de la marca continúa en los enlaces de las convocatorias. El carácter aparece en la tipografía y en las superficies de orientación; los datos conservan un ritmo preciso para comparar.\n\nEste sistema v2 registra el rediseño autorizado por el Product Owner y la implementación efectiva de globals.css, donde prevalecen las últimas reglas. Reemplaza la identidad azul anterior y el modo oscuro automático. El tema inicial es claro; el botón de la cabecera activa explícitamente el oscuro. El español colombiano, el perfil opcional, la trazabilidad y la incertidumbre honesta son compromisos duraderos de PRODUCT.md.",
+    "keyCharacteristics": [
+      "Tinta bosque, lienzo verde casi blanco y acentos lima.",
+      "Títulos expresivos y datos compactos en filas comparables.",
+      "Superficies planas con contornos finos y paneles de orientación verdes.",
+      "Tema claro inicial, oscuro por elección y movimiento reducido respetado."
+    ],
+    "rules": [
+      {
+        "name": "The Tema elegido Rule",
+        "body": "El primer render es claro. El oscuro se activa con el botón explícito; no se hereda prefers-color-scheme ni se promete persistencia que el componente no implementa.",
+        "section": "colors"
+      },
+      {
+        "name": "The Dos voces Rule",
+        "body": "Bricolage identifica y orienta; Urbanist explica y permite operar. No introducir otra familia para etiquetas o cifras. La compensación usa números tabulares.",
+        "section": "typography"
+      },
+      {
+        "name": "The Profundidad por contraste Rule",
+        "body": "Separar con tono y borde; reservar el movimiento breve para comunicar entrada, interacción o carga.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** reutilizar los roles semánticos y verificar los dos temas.",
+      "**Do** mantener fuente, verificación y aviso de requisitos en cada oportunidad.",
+      "**Do** usar Bricolage para orientación y Urbanist para lectura y controles.",
+      "**Do** conservar foco visible, etiquetas y controles cómodos en móvil.",
+      "**Do** respetar la preferencia de movimiento reducido."
+    ],
+    "donts": [
+      "**Don't** recuperar el azul anterior ni activar el oscuro automáticamente.",
+      "**Don't** convertir los resultados en una cuadrícula de tarjetas grandes.",
+      "**Don't** comunicar elegibilidad únicamente con color ni presentarla como garantía.",
+      "**Don't** añadir sombras o logotipos ficticios como parte de este sistema."
+    ]
+  }
+}

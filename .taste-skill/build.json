@@ -1,0 +1,11 @@
+{
+ "page": null,
+ "url": "http://localhost:3000/practicas",
+ "root": null,
+ "kind": "software",
+ "category": "practicas",
+ "primary": "Buscar prácticas",
+ "rounds": 3,
+ "start": "2026-11-13T19:27:16.912Z",
+ "by": "gate.mjs --start"
+}

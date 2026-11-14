@@ -1,0 +1,174 @@
+.pc-hero {
+  /* The illustrated brand surface remains light in both application themes. */
+  --hero-ink: #192c25;
+  --hero-forest: #204c3c;
+  --hero-line: #9fbb66;
+  background: var(--lime);
+  color: var(--hero-ink);
+  color-scheme: light;
+}
+
+.pc-hero-inner {
+  padding-top: 64px;
+}
+
+.pc-hero-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 56px;
+}
+
+.pc-hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(48px, 5.2vw, 76px);
+  font-weight: 600;
+  line-height: 1.13;
+  letter-spacing: -0.04em;
+  margin: 0;
+}
+
+.pc-hero-title span {
+  display: inline-block;
+  background: var(--hero-forest);
+  color: var(--lime);
+  border-radius: 100px;
+  padding: 0 24px 6px;
+}
+
+.pc-hero-search > p {
+  max-width: 43ch;
+  font-size: 18px;
+  line-height: 1.6;
+  margin: 0 0 24px;
+  color: var(--hero-ink);
+}
+
+.pc-hero-search .search-box {
+  background: #f8faf7;
+  color: var(--hero-ink);
+  border-color: transparent;
+}
+
+.pc-hero-search .search-box input {
+  color: var(--hero-ink);
+  caret-color: var(--hero-forest);
+  font-size: 14px;
+}
+
+.pc-hero-search .search-box input::placeholder {
+  color: #5b6860;
+}
+
+.pc-hero-search .search-box button {
+  background: var(--hero-forest);
+  color: #fff;
+  font-size: 13px;
+  padding-inline: 16px;
+}
+
+.pc-hero :focus-visible {
+  outline-color: var(--hero-forest);
+}
+
+.pc-hero-assurances {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 14px;
+  font-size: 12px;
+}
+
+.pc-hero-assurances span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pc-hero-art {
+  max-width: 900px;
+  margin: 36px auto 0;
+}
+
+.pc-hero-art img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.pc-hero-levels {
+  display: grid;
+  grid-template-columns: 0.8fr 1fr 1.25fr 1.1fr;
+  align-items: center;
+  gap: 24px;
+  padding-block: 24px;
+  border-top: 1px solid var(--hero-line);
+}
+
+.pc-hero-levels p {
+  font-size: 15px;
+  line-height: 1.4;
+  margin: 0;
+  color: var(--hero-ink);
+}
+
+.pc-hero-levels a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 650;
+  transition: background 180ms ease-out;
+}
+
+.pc-hero-levels a:hover {
+  background: #c5e468;
+  text-decoration: none;
+}
+
+.pc-hero-levels svg {
+  flex-shrink: 0;
+  transition: transform 180ms ease-out;
+}
+
+.pc-hero-levels a:hover svg {
+  transform: translate(2px, -2px);
+}
+
+@media (max-width: 1100px) {
+  .pc-hero-inner { padding-top: 48px; }
+  .pc-hero-intro { gap: 32px; }
+  .pc-hero-title { font-size: clamp(42px, 5.2vw, 58px); }
+  .pc-hero-title span { padding-inline: 16px; }
+  .pc-hero-search > p { font-size: 16px; }
+  .pc-hero-search .search-box { flex-wrap: wrap; }
+  .pc-hero-search .search-box button { width: 100%; }
+  .pc-hero-levels { gap: 12px; }
+}
+
+@media (max-width: 767px) {
+  .pc-hero-inner { padding-top: 32px; }
+  .pc-hero-intro { grid-template-columns: 1fr; gap: 24px; }
+  .pc-hero-title { font-size: clamp(38px, 10vw, 64px); line-height: 1.16; }
+  .pc-hero-title span { padding: 0 16px 4px; }
+  .pc-hero-search > p { font-size: 16px; margin-bottom: 20px; max-width: 43ch; }
+  .pc-hero-search .search-box { flex-wrap: nowrap; }
+  .pc-hero-search .search-box button { width: auto; padding-inline: 14px; }
+  .pc-hero-assurances { font-size: 12px; gap: 8px 12px; }
+  .pc-hero-art { margin-top: 28px; }
+  .pc-hero-levels { grid-template-columns: 1fr; gap: 0; padding-block: 20px 16px; }
+  .pc-hero-levels p { margin-bottom: 12px; font-size: 16px; }
+  .pc-hero-levels p br { display: none; }
+  .pc-hero-levels p strong::before { content: " "; }
+  .pc-hero-levels a { min-height: 52px; padding-inline: 0; border-bottom: 1px solid var(--hero-line); border-radius: 0; }
+  .pc-hero-levels a:last-child { border-bottom: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-hero-levels a, .pc-hero-levels svg { transition: none; }
+  .pc-hero-levels a:hover svg { transform: none; }
+}
