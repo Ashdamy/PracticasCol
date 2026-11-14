@@ -31,11 +31,22 @@ const MONTH_DAY_RE = new RegExp(
   `\\b(${MONTH_ALT})\\b\\.?\\s+(\\d{1,2})\\b(?:\\s*,?\\s*(?:de\\s+|del\\s+)?(\\d{4})\\b)?`,
 );
 const DM_RE = /\b(\d{1,2})\/(\d{1,2})\b/;
+// Solo mes y año: "enero 2027", "enero de 2027", "Enero, 2027", "ene. 2027".
+const MONTH_YEAR_RE = new RegExp(`\\b(${MONTH_ALT})\\b\\.?\\s*,?\\s*(?:de\\s+|del\\s+)?(\\d{4})\\b`);
+// "01/2027", "1-2027".
+const NUM_MONTH_YEAR_RE = /(?<![\d/.-])(\d{1,2})[-/](\d{4})\b(?![-/.]\d)/;
+// "2027-01". El mes va con dos dígitos para no confundirlo con periodos académicos ("2027-1").
+const YEAR_MONTH_RE = /(?<![\d/.-])(\d{4})[-/](\d{2})\b(?![-/.]\d)/;
+
+export const MONTH_YEAR_START_NOTE = "Solo se publicó mes y año; se asumió el día 1";
+export const MONTH_YEAR_DEADLINE_NOTE = "Solo se publicó mes y año; se asumió el último día del mes; confirmar";
 
 interface Parts {
   year: number | null;
   month: number;
   day: number;
+  /** La fuente solo trae mes y año: el día se decide según sea inicio o cierre. */
+  monthOnly?: boolean;
   note?: string;
   /** Posición en el texto donde termina la fecha encontrada. */
   end: number;
@@ -72,6 +83,16 @@ function parseParts(f: string): Parts | null {
 
   m = DM_RE.exec(f);
   if (m) return { year: null, month: Number(m[2]), day: Number(m[1]), end: m.index + m[0].length };
+
+  // Solo mes y año (van al final para no quitarle el paso a ninguna fecha completa).
+  m = MONTH_YEAR_RE.exec(f);
+  if (m) return { year: Number(m[2]), month: MONTHS[m[1]], day: 1, monthOnly: true, end: m.index + m[0].length };
+
+  m = NUM_MONTH_YEAR_RE.exec(f);
+  if (m) return { year: Number(m[2]), month: Number(m[1]), day: 1, monthOnly: true, end: m.index + m[0].length };
+
+  m = YEAR_MONTH_RE.exec(f);
+  if (m) return { year: Number(m[1]), month: Number(m[2]), day: 1, monthOnly: true, end: m.index + m[0].length };
 
   return null;
 }
@@ -111,7 +132,7 @@ function resolve(f: string, today: string | undefined, pick: "first" | "last" = 
   if (pick === "last") {
     const all = parseAllParts(f);
     if (all.length > 1) {
-      const last = resolveParts(all[all.length - 1], today);
+      const last = resolveParts(all[all.length - 1], today, pick);
       if (last.kind !== "ok") return last;
       return {
         kind: "ok",
@@ -123,20 +144,33 @@ function resolve(f: string, today: string | undefined, pick: "first" | "last" = 
   }
   const parts = parseParts(f);
   if (!parts) return { kind: "none" };
-  return resolveParts(parts, today);
+  return resolveParts(parts, today, pick);
 }
 
-function resolveParts(parts: Parts, today: string | undefined): Resolved {
+/** Último día del mes (tiene en cuenta los bisiestos). */
+function lastDayOfMonth(year: number, month: number): number {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
 
+/** `pick: "last"` = fecha de cierre: con solo mes y año se toma el último día del mes; si no, el primero. */
+function resolveParts(parts: Parts, today: string | undefined, pick: "first" | "last" = "first"): Resolved {
   if (parts.year !== null) {
-    const date = toIso(parts.year, parts.month, parts.day);
+    const isDeadline = pick === "last";
+    const day =
+      parts.monthOnly && isDeadline && parts.month >= 1 && parts.month <= 12
+        ? lastDayOfMonth(parts.year, parts.month)
+        : parts.day;
+    const date = toIso(parts.year, parts.month, day);
     if (!date) return { kind: "invalid" };
+    const monthNote = parts.monthOnly ? (isDeadline ? MONTH_YEAR_DEADLINE_NOTE : MONTH_YEAR_START_NOTE) : null;
     if (today) {
       const diff = daysBetween(today, date);
       if (diff > 730 || diff < -365) {
-        return { kind: "ok", date, confidence: "baja", note: `Fecha poco probable (${date}); confirmar` };
+        const unlikely = `Fecha poco probable (${date}); confirmar`;
+        return { kind: "ok", date, confidence: "baja", note: monthNote ? `${monthNote}. ${unlikely}` : unlikely };
       }
     }
+    if (monthNote) return { kind: "ok", date, confidence: isDeadline ? "baja" : "media", note: monthNote };
     return { kind: "ok", date, confidence: parts.note ? "media" : "alta", note: parts.note };
   }
 

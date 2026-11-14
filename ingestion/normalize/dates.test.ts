@@ -86,8 +86,72 @@ describe("normalizeDeadline", () => {
     expect(result.value.type).toBe("no_publicada");
     expect(result.confidence).toBe("baja");
     expect(result.note).toBeTruthy();
-    // "mayo 2027" no trae día: no se inventa.
-    expect(normalizeDeadline("mayo 2027", TODAY).confidence).toBe("baja");
+  });
+});
+
+const MONTH_YEAR_FORMATS = [
+  "enero 2027",
+  "enero de 2027",
+  "Enero, 2027",
+  "ene. 2027",
+  "ene 2027",
+  "01/2027",
+  "1-2027",
+  "2027-01",
+];
+
+describe("fechas con solo mes y año", () => {
+  it.each(MONTH_YEAR_FORMATS)("inicio %j → día 1 con confianza media", (text) => {
+    expect(normalizeDate(text, TODAY)).toEqual({
+      value: "2027-01-01",
+      confidence: "media",
+      note: "Solo se publicó mes y año; se asumió el día 1",
+    });
+  });
+
+  it.each(MONTH_YEAR_FORMATS)("fecha límite %j → último día del mes con confianza baja", (text) => {
+    expect(normalizeDeadline(text, TODAY)).toEqual({
+      value: { type: "fecha", date: "2027-01-31" },
+      confidence: "baja",
+      note: "Solo se publicó mes y año; se asumió el último día del mes; confirmar",
+    });
+  });
+
+  it("el inicio no necesita `today`", () => {
+    expect(normalizeDate("mayo de 2027").value).toBe("2027-05-01");
+  });
+
+  it("el último día respeta el mes y los bisiestos", () => {
+    expect(normalizeDeadline("febrero 2028", TODAY).value.date).toBe("2028-02-29");
+    expect(normalizeDeadline("02/2027", TODAY).value.date).toBe("2027-02-28");
+    expect(normalizeDeadline("abril de 2027", TODAY).value.date).toBe("2027-04-30");
+    expect(normalizeDeadline("diciembre 2026", TODAY).value.date).toBe("2026-12-31");
+  });
+
+  it("un mes sin año no es una fecha", () => {
+    const start = normalizeDate("enero", TODAY);
+    expect(start.value).toBeNull();
+    expect(start.confidence).toBe("baja");
+    expect(start.note).toContain("No se pudo interpretar la fecha");
+
+    const deadline = normalizeDeadline("enero", TODAY);
+    expect(deadline.value).toEqual({ type: "no_publicada", date: null });
+    expect(deadline.confidence).toBe("baja");
+  });
+
+  it("un mes y año ya pasados se conservan (el estado lo decide normalizeDraft)", () => {
+    expect(normalizeDeadline("octubre 2026", TODAY).value).toEqual({ type: "fecha", date: "2026-10-31" });
+  });
+
+  it("mes inválido o periodo académico no se interpretan como mes y año", () => {
+    expect(normalizeDate("13/2027", TODAY)).toMatchObject({ value: null, confidence: "baja" });
+    expect(normalizeDate("2027-1", TODAY)).toMatchObject({ value: null, confidence: "baja" });
+  });
+
+  it("no le quita el paso a las fechas completas", () => {
+    expect(normalizeDate("15 de enero de 2027", TODAY)).toEqual({ value: "2027-01-15", confidence: "alta" });
+    expect(normalizeDate("enero 15 de 2027", TODAY)).toEqual({ value: "2027-01-15", confidence: "alta" });
+    expect(normalizeDeadline("2027-01-15", TODAY).value.date).toBe("2027-01-15");
   });
 });
 

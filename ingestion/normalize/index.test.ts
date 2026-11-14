@@ -131,6 +131,75 @@ describe("normalizeDraft", () => {
     expect(normalizeDraft(draft({ deadlineText: "13/11/2026" }), options).candidate.status).toBe("publicada");
   });
 
+  it("fecha límite con solo mes y año: último día del mes, a revisión; si ya pasó → vencida", () => {
+    const open = normalizeDraft(draft({ deadlineText: "diciembre de 2026" }), options);
+    expect(open.candidate).toMatchObject({ deadlineType: "fecha", deadlineDate: "2026-12-31", status: "en_revision" });
+    expect(open.fieldConfidence.deadline).toBe("baja");
+    expect(open.issues).toContain("Fecha límite: Solo se publicó mes y año; se asumió el último día del mes; confirmar");
+
+    const past = normalizeDraft(draft({ deadlineText: "octubre 2026" }), options);
+    expect(past.candidate).toMatchObject({ deadlineDate: "2026-10-31", status: "vencida" });
+    expect(past.issues.join(" ")).toContain("ya pasó (2026-10-31)");
+
+    // El mes en curso sigue abierto hasta su último día.
+    expect(normalizeDraft(draft({ deadlineText: "11/2026" }), options).candidate).toMatchObject({
+      deadlineDate: "2026-11-30",
+      status: "en_revision",
+    });
+  });
+
+  it("fecha de inicio con solo mes y año: día 1 con confianza media", () => {
+    const result = normalizeDraft(draft({ startDateText: "enero 2027" }), options);
+    expect(result.candidate.startDate).toBe("2027-01-01");
+    expect(result.fieldConfidence.startDate).toBe("media");
+    expect(result.issues).toEqual(["Fecha de inicio: Solo se publicó mes y año; se asumió el día 1"]);
+  });
+
+  describe("pago en contrato de aprendizaje (Ley 789 de 2002)", () => {
+    const APPRENTICE_ISSUE = "Pago: en contrato de aprendizaje se interpreta como apoyo de sostenimiento";
+    const apprentice = (compensationText: string) =>
+      normalizeDraft(
+        draft({ title: "Aprendiz de logística", typeText: "Contrato de aprendizaje", compensationText }),
+        options,
+      );
+
+    it.each([
+      ["$1.300.000", 1_300_000],
+      ["Salario 1.300.000", 1_300_000],
+      ["75% SMMLV", null],
+    ])("%j → apoyo de sostenimiento, conserva el monto", (text, amountCop) => {
+      const result = apprentice(text);
+      expect(result.candidate.type).toBe("contrato_aprendizaje");
+      expect(result.candidate.compensationType).toBe("apoyo_sostenimiento");
+      expect(result.candidate.compensationAmountCop).toBe(amountCop);
+      expect(result.issues).toContain(APPRENTICE_ISSUE);
+      expect(result.issues.join(" ")).not.toContain("se asumió salario");
+      expect(result.candidate.status).toBe("en_revision");
+    });
+
+    it("mantiene el aviso de salarios mínimos sin valor en pesos", () => {
+      const result = apprentice("75% SMMLV");
+      expect(result.issues.filter((issue) => issue.startsWith("Pago:"))).toEqual([
+        APPRENTICE_ISSUE,
+        'Pago: Monto expresado en salarios mínimos ("75% SMMLV"): falta el valor en pesos',
+      ]);
+    });
+
+    it("si la fuente ya dice apoyo de sostenimiento no agrega observaciones", () => {
+      const result = apprentice("Apoyo de sostenimiento $1.300.000");
+      expect(result.candidate.compensationType).toBe("apoyo_sostenimiento");
+      expect(result.issues).toEqual([]);
+    });
+
+    it("en otros tipos el pago no cambia", () => {
+      const result = normalizeDraft(draft({ compensationText: "$1.300.000" }), options);
+      expect(result.candidate.type).toBe("practica_profesional");
+      expect(result.candidate.compensationType).toBe("salario");
+      expect(result.candidate.compensationAmountCop).toBe(1_300_000);
+      expect(result.issues).toEqual(["Pago: Monto sin etiqueta: se asumió salario"]);
+    });
+  });
+
   it("usa el enlace de la fuente si falta el de postulación (y lo marca)", () => {
     const result = normalizeDraft(draft({ applyUrl: null }), options);
     expect(result.candidate.applyUrl).toBe("https://example.com/convocatorias/1");

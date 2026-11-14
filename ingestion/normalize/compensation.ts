@@ -11,6 +11,8 @@ export interface CompensationValue {
 export const MIN_PLAUSIBLE_COP = 100_000;
 export const MAX_PLAUSIBLE_COP = 20_000_000;
 
+export const UNLABELED_AMOUNT_NOTE = "Monto sin etiqueta: se asumió salario";
+
 const UNPAID_RE = /no remunerad|sin remuneracion|ad[- ]?honorem|sin pago|no (es )?pag[ao]|voluntariado/;
 const UNSPECIFIED_RE = /a convenir|por (definir|convenir|acordar)|no (se )?(especific|inform|indic)|negociable|^n\/?a$/;
 const SMMLV_RE = /smm?lv|smlmv|salarios? minimos?|minimo legal/;
@@ -74,7 +76,7 @@ export function normalizeCompensation(text: string | null | undefined): Normaliz
     );
   }
   if (!label) {
-    return result({ type, amountCop }, "media", "Monto sin etiqueta: se asumió salario");
+    return result({ type, amountCop }, "media", UNLABELED_AMOUNT_NOTE);
   }
   return result({ type, amountCop }, "alta");
 }

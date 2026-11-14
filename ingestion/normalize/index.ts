@@ -7,7 +7,7 @@ import type { OpportunityStatus } from "@/lib/contracts";
 import { getProgram } from "@/lib/catalog/academic";
 import { EDUCATION_LEVELS } from "@/lib/contracts";
 import type { Confidence, Normalized, OpportunityCandidate, OpportunityDraft } from "../types";
-import { normalizeCompensation } from "./compensation";
+import { normalizeCompensation, UNLABELED_AMOUNT_NOTE } from "./compensation";
 import { normalizeDate, normalizeDeadline } from "./dates";
 import { normalizeDuration } from "./duration";
 import { normalizeMunicipality } from "./geo";
@@ -34,6 +34,9 @@ export const MAX_DESCRIPTION_LENGTH = 600;
 export const MAX_REQUIREMENTS = 8;
 export const MAX_SLUG_LENGTH = 80;
 const MAX_TITLE_LENGTH = 160;
+
+/** Ley 789 de 2002: lo que paga un contrato de aprendizaje es apoyo de sostenimiento, no salario. */
+export const APPRENTICESHIP_SUPPORT_NOTE = "en contrato de aprendizaje se interpreta como apoyo de sostenimiento";
 
 export interface NormalizeOptions {
   /** Hoy en Colombia, `yyyy-mm-dd`. */
@@ -192,7 +195,19 @@ export function normalizeDraft(draft: OpportunityDraft, options: NormalizeOption
   ).slug;
 
   // ---- Condiciones ----
-  const compensation = take("compensation", "Pago", normalizeCompensation(draft.compensationText));
+  let compensationResult = normalizeCompensation(draft.compensationText);
+  let compensationExtraNote: string | undefined;
+  if (type === "contrato_aprendizaje" && compensationResult.value.type === "salario") {
+    // Se conserva el monto y cualquier otro aviso (p. ej. SMMLV sin valor en pesos), menos el de "se asumió salario".
+    if (compensationResult.note !== UNLABELED_AMOUNT_NOTE) compensationExtraNote = compensationResult.note;
+    compensationResult = result(
+      { ...compensationResult.value, type: "apoyo_sostenimiento" as const },
+      lowest(compensationResult.confidence, "media"),
+      APPRENTICESHIP_SUPPORT_NOTE,
+    );
+  }
+  const compensation = take("compensation", "Pago", compensationResult);
+  if (compensationExtraNote) issues.push(`Pago: ${compensationExtraNote}`);
   const duration = take("duration", "Duración", normalizeDuration(draft.durationText));
   const deadline = take("deadline", "Fecha límite", normalizeDeadline(draft.deadlineText, today));
   const startDate = take("startDate", "Fecha de inicio", normalizeDate(draft.startDateText, today));
