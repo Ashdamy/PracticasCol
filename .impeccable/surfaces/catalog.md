@@ -1,4 +1,4 @@
-﻿# Catálogo y detalle
+# Catálogo y detalle
 
 Modo: Operate; inicio con intención de descubrimiento. Rediseño autorizado por el PO tras rechazar la identidad anterior por genérica. Conservar lógica, contratos, Suspense y flujos.
 
@@ -6,7 +6,7 @@ Modo: Operate; inicio con intención de descubrimiento. Rediseño autorizado por
 
 THESIS: El primer empleo como punto de partida: una entrada con personalidad y un directorio que deja comparar oportunidades sin recorrer tarjetas enormes.
 
-OWN-WORLD: Títulos Bricolage Grotesque, cuerpo Urbanist, fondo verde casi blanco, tinta bosque y acento lima. La flecha de avance es la marca, no una insignia de IA. Tema claro inicial y selector de oscuro.
+OWN-WORLD: Títulos Bricolage Grotesque, cuerpo Urbanist, fondo verde casi blanco, tinta bosque y acento lima. La marca del PO combina birrete y cuaderno abierto, con wordmark prácticascol. en Bricolage Grotesque trazado. Tema claro inicial y selector de oscuro.
 
 STORY: Encontrar por lo que estudias, comparar compensación y cierre, entender requisitos y salir a la fuente oficial. Perfil académico siempre opcional.
 

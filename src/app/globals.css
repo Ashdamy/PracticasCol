@@ -174,31 +174,6 @@ main {
 .brand:hover {
   text-decoration: none;
 }
-.brand-col {
-  font-weight: 450;
-}
-.brand-dot {
-  color: var(--primary);
-}
-.brand-mark {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 35px;
-  height: 35px;
-  background: var(--primary);
-  color: var(--primary-foreground);
-  border-radius: 10px;
-  font-size: 31px;
-  line-height: 1;
-  margin-right: 10px;
-  padding-bottom: 5px;
-}
-.brand-mark svg {
-  position: absolute;
-  right: 2px;
-  top: 2px;
-}
 .header-inner nav {
   display: flex;
   gap: 32px;
@@ -971,13 +946,6 @@ input[type="checkbox"] {
   .brand {
     font-size: 24px;
   }
-  .brand-mark {
-    width: 30px;
-    height: 30px;
-    font-size: 27px;
-    border-radius: 8px;
-    margin-right: 8px;
-  }
   .header-inner nav {
     display: none;
   }
@@ -1172,24 +1140,6 @@ h1 {
 .brand {
   font-size: 26px;
   letter-spacing: -0.045em;
-}
-.brand-col {
-  font-weight: 600;
-}
-.brand-mark {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: var(--lime);
-  color: #204c3c;
-  padding: 0;
-  margin-right: 9px;
-}
-.brand-mark svg {
-  position: static;
-}
-.brand-dot {
-  color: var(--primary);
 }
 .header-inner nav {
   justify-content: center;
@@ -1739,10 +1689,6 @@ h1 {
     font-size: 23px;
     flex: 1;
   }
-  .brand-mark {
-    width: 30px;
-    height: 30px;
-  }
   .profile-link {
     padding: 0 10px;
     font-size: 12px;
@@ -1986,11 +1932,6 @@ h1 {
 @media (max-width: 360px) {
   .brand {
     font-size: 21px;
-  }
-  .brand-mark {
-    margin-right: 6px;
-    width: 27px;
-    height: 27px;
   }
   .profile-link {
     padding: 0 8px;

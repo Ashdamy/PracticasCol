@@ -138,7 +138,7 @@ components:
 
 **Creative North Star: "El próximo paso"**
 
-Una identidad cercana que da dirección: titulares Bricolage Grotesque, texto Urbanist, tinta bosque y una señal lima para avanzar. La flecha ascendente de la marca continúa en los enlaces de las convocatorias. El carácter aparece en la tipografía y en las superficies de orientación; los datos conservan un ritmo preciso para comparar.
+Una identidad cercana que da dirección: titulares Bricolage Grotesque, texto Urbanist, tinta bosque y una señal lima para avanzar. La marca del PO combina birrete y cuaderno abierto; el wordmark prácticascol. usa Bricolage Grotesque 800 convertido a trazados. Los SVG de public/brand emplean bosque #204c3c y lima #d5f477, con versión clara y oscura. El carácter aparece en la tipografía y en las superficies de orientación; los datos conservan un ritmo preciso para comparar.
 
 Este sistema v2 registra el rediseño autorizado por el Product Owner y la implementación efectiva de globals.css, donde prevalecen las últimas reglas. Reemplaza la identidad azul anterior y el modo oscuro automático. El tema inicial es claro; el botón de la cabecera activa explícitamente el oscuro. El español colombiano, el perfil opcional, la trazabilidad y la incertidumbre honesta son compromisos duraderos de PRODUCT.md.
 
@@ -159,7 +159,7 @@ La paleta combina verdes vegetales contenidos con una señal lima luminosa. El f
 
 ### Secondary
 
-`lime` marca la flecha de identidad, el fondo de la portada ilustrada y el botón oficial sobre verde. En la portada, «viene.» aparece en una cápsula bosque con texto lima; la sección conserva fondo lima y tinta bosque también en tema oscuro. Los paneles de postulación mantienen el bosque de la identidad también en oscuro; sus textos usan `panel-foreground` y `panel-muted`, con separadores `panel-border`.
+`lime` marca el birrete y cuaderno de identidad, el fondo de la portada ilustrada y el botón oficial sobre verde. En la portada, «viene.» aparece en una cápsula bosque con texto lima; la sección conserva fondo lima y tinta bosque también en tema oscuro. Los paneles de postulación mantienen el bosque de la identidad también en oscuro; sus textos usan `panel-foreground` y `panel-muted`, con separadores `panel-border`.
 
 ### Neutral
 
@@ -199,7 +199,7 @@ El drawer usa overlay en nivel (40) y panel en (50); el enlace para saltar al co
 
 ## Shapes
 
-Filas y buscador comparten esquinas amplias pero contenidas (`row`); los paneles de detalle usan `panel`. La portada ilustrada es una superficie continua sin contenedor redondeado; usa una cápsula para destacar una palabra. El patrón `starting-point` se conserva como referencia del panel anterior y ya no se usa en la portada. Botones y campos usan radios pequeños; filtros rápidos y perfil usan cápsulas. La marca es una flecha dentro de un círculo lima. Los avatares muestran iniciales de la organización con fondos suaves por tipo de convocatoria.
+Filas y buscador comparten esquinas amplias pero contenidas (`row`); los paneles de detalle usan `panel`. La portada ilustrada es una superficie continua sin contenedor redondeado; usa una cápsula para destacar una palabra. El patrón `starting-point` se conserva como referencia del panel anterior y ya no se usa en la portada. Botones y campos usan radios pequeños; filtros rápidos y perfil usan cápsulas. La marca es un birrete sobre un cuaderno abierto dentro de un cuadrado bosque de esquinas redondeadas. Los avatares muestran iniciales de la organización con fondos suaves por tipo de convocatoria.
 
 ## Components
 

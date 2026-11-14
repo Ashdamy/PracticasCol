@@ -4,6 +4,7 @@ import { ArrowUpRight, GraduationCap } from "lucide-react";
 import "@fontsource-variable/urbanist";
 import "@fontsource-variable/bricolage-grotesque";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import "./globals.css";
 export const metadata: Metadata = {
   title: "PrácticasCol",
@@ -37,11 +38,7 @@ export default function RootLayout({
         <header className="site-header">
           <div className="content header-inner">
             <Link href="/" className="brand" aria-label="PrácticasCol, inicio">
-              <span className="brand-mark">
-                <ArrowUpRight size={25} aria-hidden="true" />
-              </span>
-              prácticas<span className="brand-col">col</span>
-              <span className="brand-dot">.</span>
+              <BrandLogo eager />
             </Link>
             <nav aria-label="Navegación principal">
               <Link href="/practicas">Buscar prácticas</Link>
@@ -63,8 +60,8 @@ export default function RootLayout({
         {children}
         <footer className="site-footer">
           <div className="content">
-            <Link href="/" className="footer-brand">
-              prácticascol.
+            <Link href="/" className="footer-brand" aria-label="PrácticasCol, inicio">
+              <BrandLogo />
             </Link>
             <p>Tu formación tiene un próximo paso.</p>
             <div className="footer-bottom">

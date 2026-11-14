@@ -1,0 +1,39 @@
+.brand {
+  min-height: 44px;
+}
+.brand-logo {
+  display: inline-flex;
+  width: 230px;
+  max-width: 100%;
+  vertical-align: middle;
+}
+.brand-logo img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.brand-logo .brand-logo-dark {
+  display: none;
+}
+:root[data-theme="dark"] .brand-logo-light {
+  display: none;
+}
+:root[data-theme="dark"] .brand-logo-dark {
+  display: block;
+}
+.footer-brand .brand-logo {
+  width: 280px;
+}
+@media (max-width: 767px) {
+  .brand .brand-logo {
+    width: 196px;
+  }
+  .footer-brand .brand-logo {
+    width: 240px;
+  }
+}
+@media (max-width: 360px) {
+  .brand .brand-logo {
+    width: 164px;
+  }
+}

@@ -1,5 +1,5 @@
 import { cache, Suspense } from "react";
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -28,9 +28,10 @@ import { ResultsSkeleton } from "@/components/results-skeleton";
 // React cache only deduplicates within the request; eligibility is never shared.
 const readOpportunity = cache(getOpportunity);
 
-export async function generateMetadata({
-  params,
-}: PageProps<"/practicas/[slug]">): Promise<Metadata> {
+export async function generateMetadata(
+  { params }: PageProps<"/practicas/[slug]">,
+  parent: ResolvingMetadata,
+): Promise<Metadata> {
   const opportunity = await readOpportunity((await params).slug);
   if (!opportunity) notFound();
   const title = `${opportunity.title} en ${opportunity.organization.name} | PrácticasCol`;
@@ -44,6 +45,7 @@ export async function generateMetadata({
       siteName: "PrácticasCol",
       locale: "es_CO",
       type: "website",
+      images: (await parent).openGraph?.images ?? [],
     },
   };
 }

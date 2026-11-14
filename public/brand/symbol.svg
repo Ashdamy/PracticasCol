@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" role="img" aria-label="PrácticasCol"><title>PrácticasCol</title><rect width="100" height="100" rx="22" fill="#204c3c"/>
+
+<g fill="#d5f477">
+  <path d="M37 25v7c0 5 5.8 8.5 13 8.5S63 37 63 32v-7Z"/>
+  <path d="m50 9 29 11.5L50 32 21 20.5Z"/>
+  <path d="M21 36h4l2 8h-8Z"/>
+  <rect x="14" y="51" width="34" height="35" rx="3.5"/>
+  <rect x="52" y="51" width="34" height="35" rx="3.5"/>
+</g>
+<path d="M50 20.5q-23 0-27 4" fill="none" stroke="#204c3c" stroke-width="3" stroke-linecap="round"/>
+<path d="M23 25v12" fill="none" stroke="#d5f477" stroke-width="3" stroke-linecap="round"/>
+<circle cx="50" cy="20.5" r="2.2" fill="#204c3c"/>
+<g fill="none" stroke="#204c3c" stroke-width="2.5" stroke-linecap="round">
+  <path d="M20 60h22m-22 9h22m-22 9h15M64 60h15m-15 9h15m-15 9h10"/>
+  <ellipse cx="50" cy="56" rx="3.8" ry="2"/>
+  <ellipse cx="50" cy="68" rx="3.8" ry="2"/>
+  <ellipse cx="50" cy="80" rx="3.8" ry="2"/>
+</g><g fill="#204c3c"><circle cx="58" cy="60" r="1.8"/><circle cx="58" cy="69" r="1.8"/><circle cx="58" cy="78" r="1.8"/></g></svg>
