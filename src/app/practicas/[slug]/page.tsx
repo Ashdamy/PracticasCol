@@ -1,4 +1,5 @@
-import { Suspense } from "react";
+import { cache, Suspense } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -20,13 +21,35 @@ import {
   MODALITY_LABELS,
   OPPORTUNITY_TYPE_LABELS,
 } from "@/lib/catalog/labels";
-import { date, deadline, money } from "@/lib/format";
+import { date, deadline, money, semesterRange } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { EligibilityBadge } from "@/components/eligibility-badge";
 import { ResultsSkeleton } from "@/components/results-skeleton";
-export const metadata = { title: "Detalle de la convocatoria | PrácticasCol" };
+// React cache only deduplicates within the request; eligibility is never shared.
+const readOpportunity = cache(getOpportunity);
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/practicas/[slug]">): Promise<Metadata> {
+  const opportunity = await readOpportunity((await params).slug);
+  if (!opportunity) notFound();
+  const title = `${opportunity.title} en ${opportunity.organization.name} | PrácticasCol`;
+  const description = `${opportunity.organization.name}. ${opportunity.description}`;
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      siteName: "PrácticasCol",
+      locale: "es_CO",
+      type: "website",
+    },
+  };
+}
+
 async function Detail({ params }: { params: Promise<{ slug: string }> }) {
-  const o = await getOpportunity((await params).slug);
+  const o = await readOpportunity((await params).slug);
   if (!o) notFound();
   const expired = o.status === "vencida";
   return (
@@ -109,10 +132,10 @@ async function Detail({ params }: { params: Promise<{ slug: string }> }) {
               </dd>
               <dt>Semestre</dt>
               <dd>
-                {o.requirements.semesterMin !== null ||
-                o.requirements.semesterMax !== null
-                  ? `Desde ${o.requirements.semesterMin ?? "no especificado"} hasta ${o.requirements.semesterMax ?? "no especificado"}`
-                  : "No publicado"}
+                {semesterRange(
+                  o.requirements.semesterMin,
+                  o.requirements.semesterMax,
+                )}
               </dd>
               <dt>Institución</dt>
               <dd>

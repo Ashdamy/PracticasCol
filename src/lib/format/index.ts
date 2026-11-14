@@ -1,5 +1,15 @@
 import type { Compensation, DeadlineInfo } from "@/lib/contracts";
 import { COMPENSATION_TYPE_LABELS } from "@/lib/catalog/labels";
+export function semesterRange(min: number | null, max: number | null) {
+  if (min !== null && max !== null) {
+    return min === max
+      ? `${min}.º semestre`
+      : `Del ${min}.º al ${max}.º semestre`;
+  }
+  if (min !== null) return `Desde ${min}.º semestre`;
+  if (max !== null) return `Hasta ${max}.º semestre`;
+  return "No publicado";
+}
 export function money(c: Compensation) {
   return c.amountCop !== null
     ? `${new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(c.amountCop)} / mes`

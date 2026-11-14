@@ -610,7 +610,7 @@
     "theme": {
       "initial": "light",
       "selector": ":root[data-theme=\"dark\"]",
-      "activation": "Botón explícito; estado local del componente sin persistencia.",
+      "activation": "Botón explícito; localStorage.pc_theme persiste la elección. Inicialización antes de pintar y sincronización con html[data-theme] y entre pestañas. Sin almacenamiento, funciona durante la visita.",
       "mapping": "Tokens dark-* sustituyen roles semánticos; paneles verdes conservan bosque y texto claro."
     },
     "overlay": {
@@ -699,7 +699,7 @@
     "rules": [
       {
         "name": "The Tema elegido Rule",
-        "body": "El primer render es claro. El oscuro se activa con el botón explícito; no se hereda prefers-color-scheme ni se promete persistencia que el componente no implementa.",
+        "body": "Sin preferencia guardada se usa claro. localStorage.pc_theme conserva la elección explícita; se restaura antes de pintar y el control lee html[data-theme] al montar. No se hereda prefers-color-scheme. Si el almacenamiento está bloqueado, el control sigue funcionando durante la visita.",
         "section": "colors"
       },
       {

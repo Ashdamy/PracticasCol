@@ -9,7 +9,6 @@ export const metadata: Metadata = {
   title: "PrácticasCol",
   description:
     "Prácticas, pasantías y contratos de aprendizaje en el Valle de Aburrá.",
-  other: { "page-type": "software", "site-kind": "software" },
   openGraph: {
     title: "PrácticasCol",
     description: "Tu próxima práctica en el Valle de Aburrá.",
@@ -23,7 +22,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es-CO" data-type="software" data-scroll-behavior="smooth">
+    <html lang="es-CO" data-scroll-behavior="smooth" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{const theme=localStorage.getItem("pc_theme");if(theme==="dark"||theme==="light")document.documentElement.dataset.theme=theme}catch{}`,
+          }}
+        />
+      </head>
       <body>
         <a href="#main" className="skip-link">
           Saltar al contenido

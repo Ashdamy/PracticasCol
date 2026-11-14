@@ -292,7 +292,12 @@ export function ActiveFilters({
     ["paidOnly", "Remuneradas"],
     ["eligibleOnly", "Solo las que aplico"],
     ["maxDurationMonths", `Máximo ${params.maxDurationMonths} meses`],
-    ["closesWithinDays", `Cierra en ${params.closesWithinDays} días`],
+    [
+      "closesWithinDays",
+      params.closesWithinDays === 0
+        ? "Cierra hoy"
+        : `Cierra en ${params.closesWithinDays} ${params.closesWithinDays === 1 ? "día" : "días"}`,
+    ],
     [
       "institutionId",
       options.institutions.find((o) => o.value === params.institutionId)?.label,

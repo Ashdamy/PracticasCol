@@ -1,5 +1,5 @@
 "use client";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { FilterOptions, StudentProfile } from "@/lib/contracts";
@@ -18,8 +18,17 @@ export function ProfileForm({
   const [fields, setFields] = useState<Record<string, string>>({});
   const [institution, setInstitution] = useState(profile?.institutionId ?? "");
   const [program, setProgram] = useState(profile?.programId ?? "");
+  const programSelect = useRef<HTMLSelectElement>(null);
+  const [showAllPrograms, setShowAllPrograms] = useState(
+    () =>
+      !!profile &&
+      !options.programs
+        .find((p) => p.value === profile.programId)
+        ?.institutionIds.includes(profile.institutionId),
+  );
   const programs = options.programs.filter(
-    (p) => !institution || p.institutionIds.includes(institution),
+    (p) =>
+      showAllPrograms || !institution || p.institutionIds.includes(institution),
   );
   return (
     <form
@@ -65,6 +74,7 @@ export function ProfileForm({
           onChange={(e) => {
             setInstitution(e.target.value);
             setProgram("");
+            setShowAllPrograms(false);
           }}
           aria-invalid={!!fields.institutionId}
           aria-describedby={
@@ -88,11 +98,19 @@ export function ProfileForm({
         Programa académico
         <select
           id="program"
+          ref={programSelect}
           required
           value={program}
           onChange={(e) => setProgram(e.target.value)}
           aria-invalid={!!fields.programId}
-          aria-describedby={fields.programId ? "program-error" : undefined}
+          aria-describedby={
+            [
+              fields.programId ? "program-error" : "",
+              showAllPrograms ? "program-help" : "",
+            ]
+              .filter(Boolean)
+              .join(" ") || undefined
+          }
         >
           <option value="">Elige tu programa</option>
           {programs.map((o) => (
@@ -107,6 +125,36 @@ export function ProfileForm({
           </span>
         )}
       </label>
+      {institution && (
+        <div>
+          <Button
+            type="button"
+            variant="outline"
+            aria-controls="program"
+            onClick={() => {
+              if (
+                showAllPrograms &&
+                !options.programs
+                  .find((p) => p.value === program)
+                  ?.institutionIds.includes(institution)
+              )
+                setProgram("");
+              setShowAllPrograms(!showAllPrograms);
+              programSelect.current?.focus();
+            }}
+          >
+            {showAllPrograms
+              ? "Ver programas de mi institución"
+              : "Mi programa no aparece → ver todos los programas"}
+          </Button>
+          {showAllPrograms && (
+            <p id="program-help" className="help" role="status">
+              Mostramos todos los programas del catálogo. Elige el tuyo; tu
+              institución se mantiene. El catálogo aún está incompleto.
+            </p>
+          )}
+        </div>
+      )}
       <label className="field" htmlFor="semester">
         Semestre o trimestre (opcional)
         <input

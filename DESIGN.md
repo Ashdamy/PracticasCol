@@ -167,7 +167,7 @@ La paleta combina verdes vegetales contenidos con una señal lima luminosa. El f
 
 Los pares `positive`, `warning` y `negative` con sus fondos comunican elegibilidad y estados; el ámbar también identifica cierres próximos. `accent-surface` sostiene la elegibilidad neutral. Los estados llevan texto y los veredictos, icono.
 
-**The Tema elegido Rule.** El primer render es claro. El oscuro se activa con el botón explícito; no se hereda prefers-color-scheme ni se promete persistencia que el componente no implementa.
+**The Tema elegido Rule.** Sin preferencia guardada se usa claro. La elección explícita se guarda en `localStorage.pc_theme` y se restaura antes de pintar; el control lee el tema efectivo de `html[data-theme]` al montar y sincroniza cambios entre pestañas. Si el navegador bloquea el almacenamiento, el botón sigue funcionando durante la visita. No se hereda prefers-color-scheme.
 
 ## Typography
 

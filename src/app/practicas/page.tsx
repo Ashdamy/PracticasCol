@@ -78,15 +78,17 @@ async function Results({
             <SortControl params={result.params} />
           </div>
           <ActiveFilters params={result.params} options={options} />
-          <div className="profile-nudge">
-            <span>
-              <strong>¿Esta práctica es para ti?</strong> Revisa los requisitos
-              con tu perfil académico.
-            </span>
-            <Link href="/perfil">
-              Completar mi perfil <ArrowRight size={17} />
-            </Link>
-          </div>
+          {!result.appliedProfile && (
+            <div className="profile-nudge">
+              <span>
+                <strong>¿Esta práctica es para ti?</strong> Revisa los
+                requisitos con tu perfil académico.
+              </span>
+              <Link href="/perfil">
+                Completar mi perfil <ArrowRight size={17} />
+              </Link>
+            </div>
+          )}
           {params.eligibleOnly && !result.appliedProfile && (
             <p role="status" className="notice">
               El filtro “Solo las que aplico” necesita tu perfil. Por ahora ves
