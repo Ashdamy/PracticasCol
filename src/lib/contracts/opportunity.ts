@@ -60,7 +60,11 @@ export interface OpportunityCard {
   compensation: Compensation;
   durationMonths: { min: number; max: number } | null;
   deadline: DeadlineInfo;
-  source: { name: string };
+  /**
+   * Fuente principal. `url` es la página de esa fuente donde se encontró la convocatoria
+   * (no es el enlace de postulación; ese es `applyUrl` en el detalle).
+   */
+  source: { name: string; url: string };
   /** ISO datetime de la última verificación humana o automática. */
   lastVerifiedAt: string;
   /** true si no se verifica hace más de `STALE_AFTER_DAYS` días. */

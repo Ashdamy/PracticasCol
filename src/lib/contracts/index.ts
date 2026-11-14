@@ -3,7 +3,7 @@
  * Importa siempre desde "@/lib/contracts".
  * Cambios que rompen compatibilidad → subir CONTRACT_VERSION y anotar en el registro (§16).
  */
-export const CONTRACT_VERSION = "0.1.0";
+export const CONTRACT_VERSION = "0.1.1";
 
 export * from "./enums";
 export * from "./profile";

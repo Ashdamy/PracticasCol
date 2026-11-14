@@ -99,7 +99,7 @@ export function toCard(r: OpportunityRecord, ctx: MapContext, eligibility = eval
           }
         : null,
     deadline: { type: r.deadlineType, date: r.deadlineDate, daysLeft: daysLeft(r, ctx.today) },
-    source: { name: mainSource?.name ?? "Fuente no disponible" },
+    source: { name: mainSource?.name ?? "Fuente no disponible", url: r.sources[0]?.url ?? r.applyUrl },
     lastVerifiedAt: r.lastVerifiedAt,
     isStale: daysSince(r.lastVerifiedAt, ctx.now) > STALE_AFTER_DAYS,
     eligibility: eligibility ? { verdict: eligibility.verdict } : null,
