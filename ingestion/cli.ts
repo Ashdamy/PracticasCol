@@ -1,42 +1,79 @@
 /**
  * CLI de ingesta manual.
- *   npm run ingest -- --csv <ruta> [--dry-run] [--json] [--auto-publish]
+ *   npm run ingest -- --xlsx <ruta> [--dry-run] [--json] [--auto-publish]
+ *   npm run ingest -- --csv <ruta> …      (alternativa en CSV)
+ *   npm run ingest -- --archivo <ruta> …  (elige por la extensión: .xlsx o .csv)
  *
  * Hoy trabaja contra un store en memoria sembrado con los datos de prueba (para que la deduplicación
- * tenga contra qué comparar): sirve para validar un CSV antes de cargarlo. No escribe en ninguna base de datos.
+ * tenga contra qué comparar): sirve para validar un archivo antes de cargarlo. No escribe en ninguna base de datos.
  */
-import { resolve } from "node:path";
+import { extname, resolve } from "node:path";
 import { STATUS_LABELS } from "@/lib/catalog/labels";
 import { MOCK_OPPORTUNITIES, MOCK_ORGANIZATIONS } from "@/lib/mocks/data";
 import { createCsvAdapter } from "./adapters/csv";
+import { createXlsxAdapter } from "./adapters/xlsx";
 import { createPoliteFetcher } from "./http";
 import { runIngestion, type IngestionItemResult, type IngestionRun } from "./pipeline";
 import { createMemoryStore } from "./store";
 import type { IngestionReport } from "./types";
 
+type FileKind = "csv" | "xlsx";
+
 interface CliArgs {
-  csv: string | null;
+  /** Archivo a cargar y cómo leerlo (`null` si no se indicó ninguno). */
+  file: { path: string; kind: FileKind } | null;
   dryRun: boolean;
   json: boolean;
   autoPublish: boolean;
   help: boolean;
 }
 
-const USAGE = `Uso: npm run ingest -- --csv <ruta> [--dry-run] [--json] [--auto-publish]
+const USAGE = `Uso: npm run ingest -- --xlsx <ruta> [--dry-run] [--json] [--auto-publish]
 
-  --csv <ruta>     Archivo CSV con convocatorias (plantilla: ingestion/templates/convocatorias.csv)
-  --dry-run        Solo valida y muestra el reporte; no guarda nada
-  --json           Imprime el resultado en JSON
-  --auto-publish   Publica sin revisión las filas con todos los datos en confianza alta`;
+  --xlsx <ruta>     Libro de Excel con convocatorias (plantilla: ingestion/templates/convocatorias.xlsx)
+  --csv <ruta>      Archivo CSV con convocatorias (plantilla: ingestion/templates/convocatorias.csv)
+  --archivo <ruta>  Cualquiera de los dos: se elige por la extensión (.xlsx o .csv)
+  --dry-run         Solo valida y muestra el reporte; no guarda nada
+  --json            Imprime el resultado en JSON
+  --auto-publish    Publica sin revisión las filas con todos los datos en confianza alta`;
+
+const FILE_OPTIONS = ["--xlsx", "--csv", "--archivo"] as const;
+type FileOption = (typeof FILE_OPTIONS)[number];
+
+function kindFromExtension(path: string): FileKind | null {
+  const extension = extname(path).toLowerCase();
+  if (extension === ".xlsx") return "xlsx";
+  if (extension === ".csv") return "csv";
+  return null;
+}
+
+function resolveFile(option: FileOption, path: string | undefined): NonNullable<CliArgs["file"]> {
+  if (!path || path.startsWith("--")) throw new Error(`Falta la ruta del archivo después de ${option}`);
+  const byExtension = kindFromExtension(path);
+  if (option === "--archivo") {
+    if (!byExtension) throw new Error(`No se reconoce la extensión de «${path}»: usa un archivo .xlsx o .csv`);
+    return { path, kind: byExtension };
+  }
+  const kind: FileKind = option === "--xlsx" ? "xlsx" : "csv";
+  if (byExtension && byExtension !== kind) {
+    throw new Error(`«${path}» es un archivo .${byExtension}: usa --${byExtension} o --archivo en lugar de ${option}`);
+  }
+  return { path, kind };
+}
 
 export function parseArgs(argv: readonly string[]): CliArgs {
-  const args: CliArgs = { csv: null, dryRun: false, json: false, autoPublish: false, help: false };
+  const args: CliArgs = { file: null, dryRun: false, json: false, autoPublish: false, help: false };
+  const setFile = (option: FileOption, path: string | undefined) => {
+    if (args.file) throw new Error("Indica un solo archivo (--xlsx, --csv o --archivo)");
+    args.file = resolveFile(option, path);
+  };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
-    if (arg === "--csv") {
-      args.csv = argv[i + 1] ?? null;
+    const option = FILE_OPTIONS.find((o) => arg === o || arg.startsWith(`${o}=`));
+    if (option && arg === option) {
+      setFile(option, argv[i + 1]);
       i += 1;
-    } else if (arg.startsWith("--csv=")) args.csv = arg.slice("--csv=".length);
+    } else if (option) setFile(option, arg.slice(option.length + 1));
     else if (arg === "--dry-run") args.dryRun = true;
     else if (arg === "--json") args.json = true;
     else if (arg === "--auto-publish") args.autoPublish = true;
@@ -102,12 +139,13 @@ async function main(): Promise<number> {
     console.error(`${error instanceof Error ? error.message : String(error)}\n\n${USAGE}`);
     return 2;
   }
-  if (args.help || !args.csv) {
+  if (args.help || !args.file) {
     console.log(USAGE);
     return args.help ? 0 : 2;
   }
 
-  const adapter = createCsvAdapter({ filePath: resolve(args.csv), autoPublish: args.autoPublish });
+  const options = { filePath: resolve(args.file.path), autoPublish: args.autoPublish };
+  const adapter = args.file.kind === "xlsx" ? createXlsxAdapter(options) : createCsvAdapter(options);
   const store = createMemoryStore({ opportunities: MOCK_OPPORTUNITIES, organizations: MOCK_ORGANIZATIONS });
   const run = await runIngestion({
     adapters: [adapter],

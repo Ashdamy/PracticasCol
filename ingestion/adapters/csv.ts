@@ -4,32 +4,21 @@
  */
 import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
-import { clean } from "../normalize/text";
 import type { OpportunityDraft, RawItem, SourceAdapter } from "../types";
+import {
+  rowToDraft,
+  TABULAR_COLUMNS,
+  toRecords,
+  type TabularColumn,
+  type TabularRecord,
+  type TabularRow,
+} from "./tabular";
 
-export const CSV_COLUMNS = [
-  "titulo",
-  "organizacion",
-  "tipo",
-  "nivel",
-  "municipio",
-  "modalidad",
-  "pago",
-  "duracion",
-  "fecha_limite",
-  "fecha_inicio",
-  "descripcion",
-  "programas",
-  "semestre",
-  "requisitos",
-  "instituciones",
-  "enlace_postulacion",
-  "enlace_fuente",
-] as const;
-export type CsvColumn = (typeof CSV_COLUMNS)[number];
-export type CsvRow = Partial<Record<CsvColumn, string>>;
-
-const REQUIRED_COLUMNS: readonly CsvColumn[] = ["titulo", "organizacion"];
+/** Las columnas son las mismas para CSV y Excel (ver `tabular.ts`). */
+export const CSV_COLUMNS = TABULAR_COLUMNS;
+export type CsvColumn = TabularColumn;
+export type CsvRow = TabularRow;
+export type CsvRecord = TabularRecord;
 
 /** Cuenta separadores fuera de comillas en la primera línea con contenido. */
 export function detectDelimiter(input: string): "," | ";" {
@@ -91,46 +80,14 @@ export function parseCsv(input: string, delimiter?: "," | ";"): string[][] {
   return rows;
 }
 
-/** "Fecha límite" → "fecha_limite". */
-function headerKey(header: string): string {
-  return clean(header).replace(/ /g, "_");
-}
-
-export interface CsvRecord {
-  /** Número de fila como se ve en la hoja de cálculo (el encabezado es la 1). */
-  rowNumber: number;
-  values: CsvRow;
-}
-
 /** Convierte el texto del CSV en registros por columna conocida. Las filas vacías se ignoran. */
 export function readCsvRecords(text: string): CsvRecord[] {
-  const rows = parseCsv(text);
-  const headerIndex = rows.findIndex((r) => r.some((cell) => cell.trim() !== ""));
-  if (headerIndex === -1) return [];
-
-  const known = new Set<string>(CSV_COLUMNS);
-  const columns = rows[headerIndex].map((h) => {
-    const key = headerKey(h);
-    return known.has(key) ? (key as CsvColumn) : null;
-  });
-  const missing = REQUIRED_COLUMNS.filter((c) => !columns.includes(c));
-  if (missing.length > 0) {
-    throw new Error(
+  const rows = parseCsv(text).map((cells, index) => ({ rowNumber: index + 1, cells }));
+  return toRecords(
+    rows,
+    (missing) =>
       `Al CSV le faltan las columnas obligatorias: ${missing.join(", ")}. Usa ingestion/templates/convocatorias.csv como base.`,
-    );
-  }
-
-  const records: CsvRecord[] = [];
-  rows.slice(headerIndex + 1).forEach((cells, index) => {
-    if (cells.every((cell) => cell.trim() === "")) return;
-    const values: CsvRow = {};
-    columns.forEach((column, i) => {
-      const value = (cells[i] ?? "").trim();
-      if (column && value) values[column] = value;
-    });
-    records.push({ rowNumber: headerIndex + index + 2, values });
-  });
-  return records;
+  );
 }
 
 export interface CsvAdapterOptions {
@@ -142,8 +99,6 @@ export interface CsvAdapterOptions {
   /** Inyectable para tests. */
   readText?: (filePath: string) => Promise<string>;
 }
-
-const text = (value: string | undefined): string | null => (value && value.trim() !== "" ? value : null);
 
 export function createCsvAdapter(options: CsvAdapterOptions): SourceAdapter {
   const id = options.id ?? "src-manual-csv";
@@ -169,26 +124,7 @@ export function createCsvAdapter(options: CsvAdapterOptions): SourceAdapter {
     },
 
     parse(raw): OpportunityDraft {
-      const row = (raw.payload ?? {}) as CsvRow;
-      return {
-        title: text(row.titulo),
-        organizationName: text(row.organizacion),
-        typeText: text(row.tipo),
-        levelText: text(row.nivel),
-        municipalityText: text(row.municipio),
-        modalityText: text(row.modalidad),
-        compensationText: text(row.pago),
-        durationText: text(row.duracion),
-        deadlineText: text(row.fecha_limite),
-        startDateText: text(row.fecha_inicio),
-        description: text(row.descripcion),
-        programsText: text(row.programas),
-        semesterText: text(row.semestre),
-        requirementsText: text(row.requisitos),
-        institutionsText: text(row.instituciones),
-        applyUrl: text(row.enlace_postulacion),
-        sourceUrl: text(row.enlace_fuente),
-      };
+      return rowToDraft((raw.payload ?? {}) as CsvRow);
     },
   };
 }

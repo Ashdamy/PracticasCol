@@ -1,8 +1,8 @@
 # Motor de ingesta de PrácticasCol
 
-Trae convocatorias desde fuentes externas (o desde un CSV cargado a mano), las normaliza al modelo del proyecto, descarta duplicados y deja listo qué se publica y qué necesita revisión humana. Los lineamientos están en `AGENTS.md` §12; este documento explica cómo está hecho y cómo usarlo.
+Trae convocatorias desde fuentes externas (o desde una plantilla de Excel o CSV llenada a mano), las normaliza al modelo del proyecto, descarta duplicados y deja listo qué se publica y qué necesita revisión humana. Los lineamientos están en `AGENTS.md` §12; este documento explica cómo está hecho y cómo usarlo.
 
-> **Estado: base.** Hoy el destino es un *store* en memoria (tests y CLI). La escritura en Supabase llega en la Fase 1 con la misma interfaz (`IngestionStore`). Todavía no hay adaptadores de fuentes reales: solo el de CSV.
+> **Estado: base.** Hoy el destino es un *store* en memoria (tests y CLI). La escritura en Supabase llega en la Fase 1 con la misma interfaz (`IngestionStore`). Todavía no hay adaptadores de fuentes reales: solo los de carga manual (Excel y CSV).
 
 ## Arquitectura
 
@@ -25,11 +25,16 @@ adapter.fetch(ctx) ──► RawItem[] ──► adapter.parse(raw) ──► Op
 | `store.ts` | Interfaz `IngestionStore` y `createMemoryStore` |
 | `pipeline.ts` | `runIngestion`: orquesta todo y devuelve un reporte por fuente |
 | `jobs/expire.ts` | `expireOpportunities(records, today)`: qué publicadas deben pasar a `vencida` |
+| `adapters/tabular.ts` | Base común de las cargas en tabla: columnas de la plantilla, reconocimiento de encabezados y mapeo fila → borrador |
+| `adapters/xlsx.ts` | Adaptador de carga manual desde Excel (`.xlsx`) |
 | `adapters/csv.ts` | Adaptador de carga manual desde CSV |
-| `templates/convocatorias.csv` | Plantilla para el Product Owner |
+| `templates/convocatorias.xlsx` | Plantilla para el Product Owner (recomendada) |
+| `templates/convocatorias.csv` | La misma plantilla en CSV (alternativa) |
+| `templates/build-template.ts` | Genera las dos plantillas: `npm run template:xlsx` |
+| `templates/LEEME.md` | Guía de llenado para el Product Owner |
 | `cli.ts` | `npm run ingest` |
 
-Nada de `ingestion/` se importa desde `src/`: usa `node:fs` y `node:crypto`, y la aplicación web no debe empaquetarlos. La dirección contraria sí vale: la ingesta reutiliza el catálogo, los contratos y las utilidades de fecha de `src/lib` y `src/server`.
+Nada de `ingestion/` se importa desde `src/`: usa `node:fs`, `node:crypto` y `exceljs` (devDependency, solo para la plantilla y el lector de Excel), y la aplicación web no debe empaquetarlos. La dirección contraria sí vale: la ingesta reutiliza el catálogo, los contratos y las utilidades de fecha de `src/lib` y `src/server`.
 
 ### Confianza y regla de publicación
 
@@ -137,9 +142,11 @@ Toda descarga pasa por `ctx.http` (el `PoliteFetcher`). Un adaptador **no** debe
 4. Tests en `ingestion/adapters/<fuente>.test.ts` con respuestas guardadas en `__fixtures__/` y un `http` falso. **Ningún test hace peticiones reales** y todos fijan la fecha (`now`/`today`).
 5. Agrégalo a la lista de adaptadores de la corrida y deja una entrada en el Registro de coordinación (§16).
 
-## Carga manual con la plantilla CSV
+## Carga manual con la plantilla (Excel o CSV)
 
-1. Copia `ingestion/templates/convocatorias.csv` y ábrela en Excel o Google Sheets. Borra las dos filas de ejemplo (dicen «EJEMPLO (borrar)» y apuntan a `example.com`).
+La vía recomendada es **`ingestion/templates/convocatorias.xlsx`**: se abre igual en cualquier computador, mientras que un CSV depende de si el Excel de cada quien separa por coma o por punto y coma. La guía para quien llena la plantilla está en `templates/LEEME.md`.
+
+1. Copia `ingestion/templates/convocatorias.xlsx` y ábrela con doble clic (hoja «Convocatorias»). Borra las dos filas de ejemplo (dicen «EJEMPLO (borrar)» y apuntan a `example.com`). La plantilla trae la fila de encabezados fija, listas desplegables en `tipo`, `nivel`, `municipio` y `modalidad` (ninguna bloquea el texto libre), una nota con ejemplos en cada encabezado y una hoja de «Instrucciones».
 2. Una fila por convocatoria. Columnas:
 
    | Columna | Ejemplo | Notas |
@@ -163,28 +170,38 @@ Toda descarga pasa por `ctx.http` (el `PoliteFetcher`). Un adaptador **no** debe
    | `enlace_fuente` | https://… | Página donde se encontró |
 
    \* Columnas obligatorias. Los encabezados se reconocen sin importar mayúsculas ni tildes («Fecha límite» = `fecha_limite`); las columnas desconocidas y las filas vacías se ignoran.
-3. Guarda como **CSV UTF-8**. El archivo puede venir con o sin BOM y separado por `,` o por `;` (lo que exporta Excel en español): se detecta solo. Las celdas con comas, punto y coma o saltos de línea deben ir entre comillas dobles (la hoja de cálculo lo hace sola).
+3. Guarda normal, como libro de Excel **.xlsx**. No hace falta exportar a CSV.
+
+**Cómo se lee el .xlsx** (`adapters/xlsx.ts`): se usa la hoja «Convocatorias» y, si no existe, la primera del libro. El número de fila de Excel es el `externalId`. Cada celda se pasa a texto antes de normalizar: las fechas de Excel salen como `aaaa-mm-dd` (en UTC, para no correr el día), los números sin notación científica, los hipervínculos como su URL en las columnas de enlace y como su texto visible en las demás, el texto con formato como texto plano y las fórmulas por su resultado. Las filas vacías (también las que solo tienen formato o lista desplegable) se ignoran. Para la misma fila, el borrador es idéntico al del CSV.
+
+**Alternativa en CSV:** `ingestion/templates/convocatorias.csv` tiene las mismas columnas y ejemplos, separada por comas y con BOM UTF-8 (abre bien en Google Sheets y en Excel configurado con coma). Al leer, el archivo puede venir con o sin BOM y separado por `,` o por `;` (lo que exporta Excel en español): se detecta solo. Las celdas con comas, punto y coma o saltos de línea deben ir entre comillas dobles (la hoja de cálculo lo hace sola).
+
+Las dos plantillas se generan con `npm run template:xlsx` a partir de `templates/build-template.ts`; no se editan a mano.
 
 ## CLI
 
 ```
-npm run ingest -- --csv <ruta> [--dry-run] [--json] [--auto-publish]
+npm run ingest -- --xlsx <ruta> [--dry-run] [--json] [--auto-publish]
+npm run ingest -- --csv <ruta> [...]
+npm run ingest -- --archivo <ruta> [...]
 ```
 
 | Opción | Efecto |
 |--------|--------|
-| `--csv <ruta>` | Archivo a cargar |
+| `--xlsx <ruta>` | Libro de Excel a cargar |
+| `--csv <ruta>` | Archivo CSV a cargar |
+| `--archivo <ruta>` | Cualquiera de los dos: se elige por la extensión (`.xlsx` o `.csv`) |
 | `--dry-run` | Solo valida y muestra el reporte; no guarda nada |
 | `--json` | Imprime el resultado completo en JSON (para scripts) |
-| `--auto-publish` | Trata el CSV como ya revisado: publica las filas sin ninguna observación. Sin esta opción todo queda en revisión |
+| `--auto-publish` | Trata el archivo como ya revisado: publica las filas sin ninguna observación. Sin esta opción todo queda en revisión |
 
 Ejemplo:
 
 ```
-npm run ingest -- --csv ingestion/templates/convocatorias.csv --dry-run
+npm run ingest -- --xlsx ingestion/templates/convocatorias.xlsx --dry-run
 ```
 
-El CLI trabaja contra un *store* en memoria sembrado con los datos de prueba (`MOCK_OPPORTUNITIES`), para que la deduplicación tenga contra qué comparar. Sirve para **validar un CSV** antes de cargarlo: muestra el reporte y, por cada fila que queda en revisión, las observaciones que hay que corregir (fecha que no se entendió, programa que no está en el catálogo, enlace sin `https`, etc.). No escribe en ninguna base de datos. El código de salida es `1` si hubo errores y `2` si los argumentos son inválidos.
+El CLI trabaja contra un *store* en memoria sembrado con los datos de prueba (`MOCK_OPPORTUNITIES`), para que la deduplicación tenga contra qué comparar. Sirve para **validar un archivo** antes de cargarlo: muestra el reporte y, por cada fila que queda en revisión, las observaciones que hay que corregir (fecha que no se entendió, programa que no está en el catálogo, enlace sin `https`, etc.). No escribe en ninguna base de datos. El código de salida es `1` si hubo errores y `2` si los argumentos son inválidos (por ejemplo, pasar un `.xlsx` a `--csv`).
 
 ## Job de vencimiento
 

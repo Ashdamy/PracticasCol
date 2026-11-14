@@ -192,8 +192,11 @@ describe("createCsvAdapter", () => {
     expect(raw).toMatchObject({ sourceId: "src-po", externalId: "2", url: "csv:lote-1.csv#fila-2" });
   });
 
-  it("la plantilla es válida: encabezados completos y dos filas de ejemplo ficticias sin observaciones", async () => {
+  it("la plantilla es válida: separada por comas, encabezados completos y dos filas de ejemplo ficticias sin observaciones", async () => {
     const text = template();
+    // BOM UTF-8 y coma: abre bien en Excel configurado con coma y en Google Sheets.
+    expect(text.charCodeAt(0)).toBe(0xfeff);
+    expect(detectDelimiter(text)).toBe(",");
     expect(parseCsv(text)[0]).toEqual([...CSV_COLUMNS]);
 
     const adapter = createCsvAdapter({ filePath: "convocatorias.csv", readText: async () => text, autoPublish: true });

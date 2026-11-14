@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "npm run typecheck && npm run lint && npm run test",
-    "ingest": "tsx ingestion/cli.ts"
+    "ingest": "tsx ingestion/cli.ts",
+    "template:xlsx": "tsx ingestion/templates/build-template.ts"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
@@ -36,6 +37,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
+    "exceljs": "^4.4.0",
     "tailwindcss": "4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^5",
