@@ -12,6 +12,7 @@
 | C | **Servicio Público de Empleo / APE del SENA** | 🔴 Caído | Vacantes del Estado y contratos de aprendizaje | Bajo (oficial) | La plataforma SISE está **fuera de servicio desde el 1/11/2026** por falta de contrato, sin fecha de regreso. No hay API pública documentada; DataEmpleo solo publica estadísticas. Pedir acceso a la Unidad del SPE cuando se restablezca |
 | D | **Programas públicos semestrales** (Alcaldía, Gobernación, Estado Joven) | ✋ Manual | Cientos de plazas, 2 veces al año | — | Carga manual en cada ciclo (pocas filas). En v2, "calendario de convocatorias" con aviso de apertura |
 | E | **Convenios** (Magneto, universidades, empresas) | 💬 Requiere gestión | Magneto es el ATS de muchas empresas de Medellín (Alkomprar, Kalley, Comfama, Postobón, ISAGEN…) | Ninguno con convenio | Contacto comercial o institucional. Encaja en v2, junto con la publicación directa por empresas |
+| F | **TheirStack** (vendedor de datos de empleo; incluye Computrabajo) | 🟠 Plan B | Ofertas de Computrabajo y otros portales, actualizadas a diario, con enlace original | **Medio**: recolecta por scraping y su contrato deja al cliente el riesgo de reclamos de terceros. Su cláusula de "no ser la fuente principal de valor" choca con un buscador de prácticas | Confirmación escrita de TheirStack para mostrar las ofertas en un sitio público, y aceptación del riesgo por el PO. Plan gratis: 200 ofertas/mes; pago desde US$59/mes por 1.500. **Nunca guardar** los datos de reclutadores (Ley 1581) |
 | ✗ | Scraping de Computrabajo, Magneto, Indeed o Jooble web, o "scrapers" de terceros (Apify y similares) | ❌ Descartado | — | Alto: términos de uso, Cloudflare, `robots.txt` | — |
 
 ## Detalle
@@ -56,4 +57,5 @@ Con eso se construye **un adaptador por tipo de ATS**, que el motor de ingesta y
 - Jooble REST API: https://jooble.org/api/about · https://jooblehelpcenter.freshdesk.com/en/support/solutions/articles/60001448238-rest-api-documentation
 - Careerjet API: https://www.careerjet.im/partners/api
 - Comparativa de APIs de ATS: https://dev.to/chaazee/comparing-the-job-posting-apis-of-greenhouse-lever-ashby-smartrecruiters-and-recruitee-2026-4b60
+- TheirStack (Computrabajo, precios y términos): https://theirstack.com/es/job-posting-api/data-source/computrabajo · https://theirstack.com/en/docs/pricing/credits · https://theirstack.com/en/docs/legal/terms-and-conditions
 - SAP SuccessFactors, feed XML y retiro de RSS: https://userapps.support.sap.com/sap/support/knowledge/en/2428902 · https://userapps.support.sap.com/sap/support/knowledge/en/3743225
