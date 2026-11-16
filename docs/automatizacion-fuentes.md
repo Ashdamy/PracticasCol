@@ -38,6 +38,20 @@ Con eso se construye **un adaptador por tipo de ATS**, que el motor de ingesta y
 - El Decreto 1823 de 2020 obliga a la interoperabilidad entre prestadores y SISE, pero **no hay una API pública para terceros**.
 - **Acción:** seguir la reactivación y, cuando vuelva, pedir acceso a datos a la Unidad Administrativa Especial del SPE.
 
+### Resultado del sondeo de ATS (2026-11-16)
+Se consultaron las APIs públicas de unas 100 empresas candidatas con presencia en Colombia.
+
+| Empresa | ATS | Ofertas en Colombia | Prácticas hoy | `robots.txt` del ATS | Decisión |
+|---------|-----|---------------------|---------------|----------------------|----------|
+| Power Digital Marketing | Greenhouse (`powerdigitalmarketing`) | ~256 (Colombia/LatAm, remotas o Medellín) | ~20 | Permite `/v1/boards` | ✅ Conectar |
+| Clara · Cobre · Wizeline | Greenhouse | 33 · 14 · 5 | 0 | Permite | ✅ Vigilar (filtro de prácticas) |
+| La Haus · Yuno | Lever | 2 · 3 | 0 | Permite (crawl-delay 1 s) | ✅ Vigilar |
+| Addi · Nubank · Belvo · Simetrik | Ashby | 28 · 13 · 3 · 2 | 0 | Responde 401 (nuestra regla lo trata como no permitido) | ⏸️ Decidir excepción documentada si algún día publican prácticas |
+| **Evolution** | SmartRecruiters | 30 (Medellín, Bogotá) | **13 en Medellín** | **`Disallow: /` para bots genéricos** | ❌ No automatizar. Seguir por Jooble (socio) o de forma manual |
+| Avery Dennison · Endava | SmartRecruiters | 12 (Envigado, Guayabal) · 1 | 1 · 0 | `Disallow: /` | ❌ No automatizar |
+
+Nota de transparencia: el sondeo exploratorio consultó la API de SmartRecruiters (unas 50 peticiones) antes de revisar su `robots.txt`. No se repetirá ni se construirá un conector automático para ese ATS.
+
 ## Estimación honesta de cobertura automática
 - **Solo con A** (ATS públicos): **20–30 %** de las ofertas útiles del Valle de Aburrá. Hay pocas empresas locales en esos ATS; suelen ser multinacionales y tecnológicas.
 - **A + B** (si Jooble o Careerjet aprueban la clave): podría pasar del **60 %**, porque agregan Computrabajo, elempleo y otros portales de forma permitida.
