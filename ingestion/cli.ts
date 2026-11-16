@@ -5,9 +5,12 @@
  *   npm run ingest -- --archivo <ruta> …  (elige por la extensión: .xlsx o .csv)
  *   npm run ingest -- --ats [--dry-run] [--json]        (todas las fuentes de ingestion/sources/ats.ts; usa la red)
  *   npm run ingest -- --ats=<id> [--dry-run] [--json]   (una sola fuente ATS)
+ *   … --store=supabase                                  (guarda en Supabase; lee la configuración de .env.local)
  *
- * Hoy trabaja contra un store en memoria sembrado con los datos de prueba (para que la deduplicación
- * tenga contra qué comparar): sirve para validar un archivo o una fuente antes de cargarla. No escribe en ninguna base de datos.
+ * Por defecto (`--store=memoria`) trabaja contra un store en memoria sembrado con los datos de prueba, para
+ * que la deduplicación tenga contra qué comparar: sirve para validar un archivo o una fuente y no escribe en
+ * ninguna base de datos. Solo escribe en Supabase con `--store=supabase` y SIN `--dry-run`
+ * (con `--dry-run` lee de Supabase para deduplicar contra lo real, pero no guarda nada).
  */
 import { extname, resolve } from "node:path";
 import { getMunicipality } from "@/lib/catalog/geo";
@@ -18,16 +21,20 @@ import { createXlsxAdapter } from "./adapters/xlsx";
 import { createPoliteFetcher } from "./http";
 import { runIngestion, type IngestionItemResult, type IngestionRun } from "./pipeline";
 import { ATS_SOURCES, createAtsAdapter, findAtsSource } from "./sources/ats";
-import { createMemoryStore } from "./store";
+import { createMemoryStore, type IngestionStore } from "./store";
+import { openSupabaseStore, type SupabaseStore } from "./stores/supabase";
 import type { IngestionLogger, IngestionReport, SourceAdapter } from "./types";
 
 type FileKind = "csv" | "xlsx";
+type StoreKind = "memoria" | "supabase";
 
 interface CliArgs {
   /** Archivo a cargar y cómo leerlo (`null` si no se indicó ninguno). */
   file: { path: string; kind: FileKind } | null;
   /** `"todas"`, el id de una fuente ATS o `null` si no se pidió `--ats`. */
   ats: string | null;
+  /** Dónde se guarda. Por defecto en memoria (no escribe en ninguna base de datos). */
+  store: StoreKind;
   dryRun: boolean;
   json: boolean;
   autoPublish: boolean;
@@ -36,14 +43,15 @@ interface CliArgs {
 
 const ALL_ATS = "todas";
 
-const USAGE = `Uso: npm run ingest -- --xlsx <ruta> [--dry-run] [--json] [--auto-publish]
-     npm run ingest -- --ats[=<id>] [--dry-run] [--json]
+const USAGE = `Uso: npm run ingest -- --xlsx <ruta> [--store=supabase] [--dry-run] [--json] [--auto-publish]
+     npm run ingest -- --ats[=<id>] [--store=supabase] [--dry-run] [--json]
 
   --xlsx <ruta>     Libro de Excel con convocatorias (plantilla: ingestion/templates/convocatorias.xlsx)
   --csv <ruta>      Archivo CSV con convocatorias (plantilla: ingestion/templates/convocatorias.csv)
   --archivo <ruta>  Cualquiera de los dos: se elige por la extensión (.xlsx o .csv)
   --ats             Consulta todas las fuentes ATS de ingestion/sources/ats.ts (usa la red)
   --ats=<id>        Consulta una sola fuente ATS: ${ATS_SOURCES.map((s) => s.token).join(", ")}
+  --store=supabase  Guarda en Supabase (configuración en .env.local). Por defecto: --store=memoria (no guarda)
   --dry-run         Solo valida y muestra el reporte; no guarda nada
   --json            Imprime el resultado en JSON
   --auto-publish    Publica sin revisión las filas con todos los datos en confianza alta (solo archivos)`;
@@ -73,7 +81,7 @@ function resolveFile(option: FileOption, path: string | undefined): NonNullable<
 }
 
 export function parseArgs(argv: readonly string[]): CliArgs {
-  const args: CliArgs = { file: null, ats: null, dryRun: false, json: false, autoPublish: false, help: false };
+  const args: CliArgs = { file: null, ats: null, store: "memoria", dryRun: false, json: false, autoPublish: false, help: false };
   const setFile = (option: FileOption, path: string | undefined) => {
     if (args.file) throw new Error("Indica un solo archivo (--xlsx, --csv o --archivo)");
     args.file = resolveFile(option, path);
@@ -90,6 +98,11 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       const id = arg.slice("--ats=".length).trim();
       if (!id) throw new Error("Falta el id de la fuente después de --ats=");
       args.ats = id;
+    } else if (arg.startsWith("--store=")) {
+      const store = arg.slice("--store=".length).trim().toLowerCase();
+      if (store === "supabase") args.store = "supabase";
+      else if (store === "memoria" || store === "memory") args.store = "memoria";
+      else throw new Error(`Store desconocido «${store}»: usa --store=memoria o --store=supabase`);
     } else if (arg === "--dry-run") args.dryRun = true;
     else if (arg === "--json") args.json = true;
     else if (arg === "--auto-publish") args.autoPublish = true;
@@ -193,7 +206,21 @@ async function main(): Promise<number> {
     info: (message) => console.error(message),
     warn: (message) => console.error(`Aviso: ${message}`),
   };
-  const store = createMemoryStore({ opportunities: MOCK_OPPORTUNITIES, organizations: MOCK_ORGANIZATIONS });
+  let store: IngestionStore;
+  if (args.store === "supabase") {
+    let supabase: SupabaseStore;
+    try {
+      supabase = openSupabaseStore();
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      return 2;
+    }
+    // Las fuentes deben existir antes de enlazar convocatorias con ellas (llave foránea).
+    if (!args.dryRun) await supabase.ensureSources(adapters);
+    store = supabase;
+  } else {
+    store = createMemoryStore({ opportunities: MOCK_OPPORTUNITIES, organizations: MOCK_ORGANIZATIONS });
+  }
   const run = await runIngestion({
     adapters,
     store,
@@ -206,8 +233,14 @@ async function main(): Promise<number> {
   if (args.json) console.log(JSON.stringify(run, null, 2));
   else {
     console.log(formatRun(run));
-    if (!args.dryRun) {
-      console.log("\nNota: por ahora el destino es un store en memoria (la escritura en Supabase llega en la Fase 1).");
+    if (args.store === "supabase") {
+      console.log(
+        args.dryRun
+          ? "\nSe comparó contra Supabase, pero no se guardó nada (--dry-run)."
+          : "\nGuardado en Supabase. Revisa la cola con: npm run admin -- revision",
+      );
+    } else if (!args.dryRun) {
+      console.log("\nNota: el destino fue un store en memoria; no se guardó en ninguna base de datos. Para guardar usa --store=supabase.");
     }
   }
   return run.reports.some((r) => r.errors.length > 0) ? 1 : 0;

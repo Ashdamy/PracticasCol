@@ -2,7 +2,7 @@
 
 Trae convocatorias desde fuentes externas (o desde una plantilla de Excel o CSV llenada a mano), las normaliza al modelo del proyecto, descarta duplicados y deja listo qué se publica y qué necesita revisión humana. Los lineamientos están en `AGENTS.md` §12; este documento explica cómo está hecho y cómo usarlo.
 
-> **Estado: base.** Hoy el destino es un *store* en memoria (tests y CLI). La escritura en Supabase llega en la Fase 1 con la misma interfaz (`IngestionStore`). Todavía no hay adaptadores de fuentes reales: solo los de carga manual (Excel y CSV).
+> **Estado: Fase 1.** Hay dos destinos con la misma interfaz (`IngestionStore`): un *store* en memoria (por defecto: valida sin guardar) y **Supabase** (`--store=supabase`). Fuentes: carga manual (Excel y CSV) y conectores de ATS (Greenhouse y Lever). La revisión de lo cargado se hace con el [CLI de administración](#cli-de-administración-npm-run-admin).
 
 ## Arquitectura
 
@@ -23,6 +23,8 @@ adapter.fetch(ctx) ──► RawItem[] ──► adapter.parse(raw) ──► Op
 | `dedupe.ts` | `dedupeHash` (sha256 de organización + título normalizado + fecha límite), `trigramSimilarity` y `findDuplicate` |
 | `http.ts` | `createPoliteFetcher`: descarga respetuosa (robots.txt, pausa por host, reintento, timeout) |
 | `store.ts` | Interfaz `IngestionStore` y `createMemoryStore` |
+| `stores/supabase.ts` | `createSupabaseStore`: la misma interfaz sobre Supabase (organizaciones, slugs únicos, relaciones, crudos y corridas) |
+| `admin.ts` · `admin-rules.ts` | CLI de administración (`npm run admin`) y sus reglas puras |
 | `pipeline.ts` | `runIngestion`: orquesta todo y devuelve un reporte por fuente |
 | `jobs/expire.ts` | `expireOpportunities(records, today)`: qué publicadas deben pasar a `vencida` |
 | `adapters/tabular.ts` | Base común de las cargas en tabla: columnas de la plantilla, reconocimiento de encabezados y mapeo fila → borrador |
@@ -181,7 +183,7 @@ Las dos plantillas se generan con `npm run template:xlsx` a partir de `templates
 ## CLI
 
 ```
-npm run ingest -- --xlsx <ruta> [--dry-run] [--json] [--auto-publish]
+npm run ingest -- --xlsx <ruta> [--store=supabase] [--dry-run] [--json] [--auto-publish]
 npm run ingest -- --csv <ruta> [...]
 npm run ingest -- --archivo <ruta> [...]
 ```
@@ -191,7 +193,8 @@ npm run ingest -- --archivo <ruta> [...]
 | `--xlsx <ruta>` | Libro de Excel a cargar |
 | `--csv <ruta>` | Archivo CSV a cargar |
 | `--archivo <ruta>` | Cualquiera de los dos: se elige por la extensión (`.xlsx` o `.csv`) |
-| `--dry-run` | Solo valida y muestra el reporte; no guarda nada |
+| `--store=supabase` | Guarda en Supabase. Sin esta opción (`--store=memoria`) no se guarda en ninguna base de datos |
+| `--dry-run` | Solo valida y muestra el reporte; no guarda nada (tampoco con `--store=supabase`) |
 | `--json` | Imprime el resultado completo en JSON (para scripts) |
 | `--auto-publish` | Trata el archivo como ya revisado: publica las filas sin ninguna observación. Sin esta opción todo queda en revisión |
 
@@ -201,7 +204,63 @@ Ejemplo:
 npm run ingest -- --xlsx ingestion/templates/convocatorias.xlsx --dry-run
 ```
 
-El CLI trabaja contra un *store* en memoria sembrado con los datos de prueba (`MOCK_OPPORTUNITIES`), para que la deduplicación tenga contra qué comparar. Sirve para **validar un archivo** antes de cargarlo: muestra el reporte y, por cada fila que queda en revisión, las observaciones que hay que corregir (fecha que no se entendió, programa que no está en el catálogo, enlace sin `https`, etc.). No escribe en ninguna base de datos. El código de salida es `1` si hubo errores y `2` si los argumentos son inválidos (por ejemplo, pasar un `.xlsx` a `--csv`).
+Por defecto el CLI trabaja contra un *store* en memoria sembrado con los datos de prueba (`MOCK_OPPORTUNITIES`), para que la deduplicación tenga contra qué comparar. Sirve para **validar un archivo** antes de cargarlo: muestra el reporte y, por cada fila que queda en revisión, las observaciones que hay que corregir (fecha que no se entendió, programa que no está en el catálogo, enlace sin `https`, etc.). No escribe en ninguna base de datos. El código de salida es `1` si hubo errores y `2` si los argumentos son inválidos (por ejemplo, pasar un `.xlsx` a `--csv`).
+
+## Guardar en Supabase (`--store=supabase`)
+
+```
+npm run ingest -- --xlsx data/mis-convocatorias.xlsx --store=supabase --dry-run   # compara contra lo real, no guarda
+npm run ingest -- --xlsx data/mis-convocatorias.xlsx --store=supabase             # guarda
+```
+
+- **Configuración:** lee `NEXT_PUBLIC_SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` de `.env.local` (con `process.loadEnvFile`; las variables que ya vengan del entorno mandan). La clave secreta omite RLS: no la compartas, no la subas al repo y no la pongas en variables `NEXT_PUBLIC_`. El CLI nunca la imprime. No depende de `USE_MOCKS`.
+- **Solo escribe con `--store=supabase` y sin `--dry-run`.** Con `--dry-run` lee de Supabase para deduplicar contra lo que ya existe, pero no guarda nada.
+- **Qué guarda** (`stores/supabase.ts`):
+  - La **organización** se busca por su nombre normalizado («Empresa X S.A.S.» = «empresa x») y se crea si no existe.
+  - El **slug** es único: si choca, se agrega un sufijo (`-2`, `-3`…). Al actualizar se conserva el slug original, para no romper enlaces.
+  - Las **relaciones** (programas, áreas, instituciones y fuentes; la primera fuente es la principal).
+  - Las **observaciones** de la normalización y la deduplicación en `review_notes`, para la cola de revisión.
+  - El **crudo** de cada ítem en `raw_items` (único por fuente + hash: lo que no cambió no se vuelve a procesar) y el **reporte** de la corrida en `ingestion_runs`.
+- **Estado:** todo entra `en_revision`, salvo con `--auto-publish` (misma regla de arriba). Nada se ve en el sitio hasta aprobarlo.
+- Cada convocatoria se guarda en varias peticiones, no en una transacción: si algo falla a mitad, el ítem sale como error, su crudo no se guarda y la siguiente corrida lo reintenta.
+
+### Esquema y catálogo
+
+Las migraciones están en `supabase/migrations/` y se aplican con `npx supabase db push --remote` (ya aplicadas al proyecto del PO). El catálogo (municipios, NBC, programas, instituciones y fuentes) **se genera** desde `src/lib/catalog` e `ingestion/sources/ats.ts`:
+
+```
+npm run db:catalog                                              # regenera supabase/migrations/20261116000000_catalog.sql
+npm run db:catalog -- supabase/migrations/<fecha>_catalog_2.sql # si el catálogo cambia después de aplicada la primera
+```
+
+Usa `insert … on conflict … do update`, así que una migración nueva del catálogo solo agrega o corrige filas. Una migración ya aplicada no se vuelve a ejecutar: si agregas una fuente ATS o un programa en el código, genera una migración nueva y aplícala. Mientras tanto, la ingesta crea sola la fila de la fuente que falte.
+
+## CLI de administración (`npm run admin`)
+
+Mientras no exista el panel web, lo cargado se revisa desde la terminal (contra Supabase, con la clave secreta de `.env.local`):
+
+| Comando | Qué hace |
+|---------|----------|
+| `npm run admin -- revision` | Lista lo que espera revisión: id corto, título, organización, fuente y observaciones |
+| `npm run admin -- ver <id o slug>` | Muestra todos los datos de una convocatoria |
+| `npm run admin -- aprobar <id o slug>... [--forzar]` | Publica: estado `publicada`, fecha de publicación y de verificación = ahora, sin marca de revisión |
+| `npm run admin -- retirar <id o slug>...` | Retira: deja de verse en el sitio (también por su URL) |
+| `npm run admin -- vencer` | Pasa a `vencida` las publicadas cuya fecha límite ya pasó (`expireOpportunities`) |
+| `npm run admin -- publicadas` | Lista lo publicado |
+
+- El **id** puede ser el id corto de las listas (primeros 8 caracteres), el id completo o el slug.
+- `aprobar` **se niega** si falta el título, la organización o un enlace de postulación `https`, o si la fecha límite ya pasó. `--forzar` salta el título, el `https` y la fecha; sin organización o sin enlace no se publica nunca (la base de datos tampoco lo permite).
+- El sitio usa una caché de unos 45 segundos: lo aprobado o retirado se refleja en menos de un minuto.
+- Código de salida: `0` bien, `1` si alguna convocatoria no se pudo procesar, `2` si faltan argumentos o configuración.
+
+Flujo típico:
+
+```
+npm run ingest -- --xlsx data/mis-convocatorias.xlsx --store=supabase
+npm run admin -- revision
+npm run admin -- ver 0ecf4a19
+npm run admin -- aprobar 0ecf4a19 122e3125
+```
 
 ## Conectores de ATS (Greenhouse y Lever)
 
@@ -238,7 +297,7 @@ Hace peticiones reales a las APIs. El log muestra, por fuente, cuántas ofertas 
 
 ## Job de vencimiento
 
-`expireOpportunities(records, today)` es pura: recibe las oportunidades y la fecha de hoy en Colombia (`todayInBogota()`), y devuelve los ids de las `publicada` cuya fecha límite ya pasó. El día de cierre todavía cuenta como abierto. Quien la llame (el cron de GitHub Actions, en la Fase 3) aplica el cambio de estado.
+`expireOpportunities(records, today)` es pura: recibe las oportunidades y la fecha de hoy en Colombia (`todayInBogota()`), y devuelve los ids de las `publicada` cuya fecha límite ya pasó. El día de cierre todavía cuenta como abierto. Quien la llame aplica el cambio de estado: hoy `npm run admin -- vencer`; en la Fase 3, el cron de GitHub Actions.
 
 ## Tests
 
@@ -246,4 +305,4 @@ Hace peticiones reales a las APIs. El log muestra, por fuente, cuántas ofertas 
 npx vitest run ingestion
 ```
 
-Todos usan una fecha fija y redes falsas. Desde Windows ejecútalos en PowerShell.
+Todos usan una fecha fija y redes falsas; los del *store* de Supabase usan un cliente falso (`src/test/fake-supabase.ts`) y nunca llaman a la base. Desde Windows ejecútalos en PowerShell.

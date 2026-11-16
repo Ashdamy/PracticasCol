@@ -42,12 +42,15 @@ async function buildContext(profile?: StudentProfile | null): Promise<MapContext
 
 /** Búsqueda principal. Pasa `parseSearchParams(await props.searchParams)`. */
 export async function searchOpportunities(params: SearchParams): Promise<SearchResult> {
+  // Primero la señal de "datos por petición": el repositorio no debe consultarse durante el prerender.
+  await connection();
   const [ctx, records] = await Promise.all([buildContext(), getRepository().listPublicRecords()]);
   return searchRecords(records, params, ctx);
 }
 
 /** Detalle por slug. `null` si no existe o fue retirada → usar `notFound()`. Las vencidas sí se devuelven. */
 export async function getOpportunity(slug: string): Promise<OpportunityDetail | null> {
+  await connection();
   const [ctx, record] = await Promise.all([buildContext(), getRepository().getRecordBySlug(slug)]);
   if (!record) return null;
   const status = effectiveStatus(record, ctx.today);
@@ -56,6 +59,7 @@ export async function getOpportunity(slug: string): Promise<OpportunityDetail | 
 }
 
 export async function getHomeData(): Promise<HomeData> {
+  await connection();
   const [ctx, records] = await Promise.all([buildContext(), getRepository().listPublicRecords()]);
   const active = records.filter((r) => effectiveStatus(r, ctx.today) === "publicada");
   const closingSoon = active

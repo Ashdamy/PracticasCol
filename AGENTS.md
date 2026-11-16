@@ -3,9 +3,9 @@
 > **Fuente única de verdad** para todos los que trabajan en el repo: el humano (Product Owner), **Claude** (planeación, arquitectura y lógica) y **Codex** (diseño frontend y UI/UX).
 > Léelo completo antes de empezar cualquier tarea. Si una decisión cambia, se actualiza **este** archivo y se anota en el [Registro de coordinación](#16-registro-de-coordinación).
 >
-> Última actualización: 2026-11-13 · Estado: **Fase 0/1. Contrato v0.1 y mocks (Claude), design system y catálogo/detalle UI (Codex) entregados. Pendiente: revisión del PO y catálogo real**
+> Última actualización: 2026-11-16 · Estado: **Fase 1. Supabase conectado (esquema, catálogo, repositorio, ingesta y CLI de administración). Pendiente: cargar el catálogo real de convocatorias y el panel de administración (UI + Supabase Auth)**
 >
-> **Arranque rápido:** `npm install` → `npm run dev` (http://localhost:3000) · `npm run check` (tipos + lint + tests). Con `USE_MOCKS=true` (default) no hace falta base de datos.
+> **Arranque rápido:** `npm install` → `npm run dev` (http://localhost:3000) · `npm run check` (tipos + lint + tests). Con `USE_MOCKS=true` (default) no hace falta base de datos; con `USE_MOCKS=false` la app lee de Supabase (§6).
 
 ---
 
@@ -127,8 +127,8 @@ UdeA, Universidad Nacional (sede Medellín), EAFIT, UPB, Universidad de Medellí
 |------|----------|--------|
 | Framework | **Next.js 16.4 (App Router, `cacheComponents` + `partialPrefetching` activos) + React 19 + TypeScript estricto** | SSR/SEO para las páginas de oportunidades, un solo lenguaje y buena compatibilidad con ambos agentes |
 | UI | **Tailwind CSS + shadcn/ui** (Radix) + lucide-react | Accesible por defecto y fácil de tematizar (lo maneja Codex) |
-| Base de datos | **Supabase (Postgres)** | Plan gratuito, Auth, RLS y búsqueda de texto completo nativa |
-| Búsqueda | **Motor en memoria en TypeScript** (`src/server/search`) sobre los registros publicados: sin tildes, plurales simples, facetas y orden | Para el volumen del MVP (< ~5.000 activas) es suficiente, y se comporta igual con mocks o con BD. La migración ya deja Postgres FTS (`spanish` + `unaccent`) + `pg_trgm` listo para cuando crezca, con la misma firma |
+| Base de datos | **Supabase (Postgres)** | Plan gratuito, Auth, RLS y búsqueda de texto completo nativa. **Repositorio implementado** (`src/server/repo/supabase.ts`): se activa con `USE_MOCKS=false` más `NEXT_PUBLIC_SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`; usa la clave secreta solo en el servidor y una caché en memoria de ~45 s. Con `USE_MOCKS=true` (default) siguen los datos de prueba |
+| Búsqueda | **Motor en memoria en TypeScript** (`src/server/search`) sobre los registros publicados: sin tildes, plurales simples, facetas y orden | Para el volumen del MVP (< ~5.000 activas) es suficiente, y se comporta igual con mocks o con BD (con Supabase, el motor corre sobre los registros publicados que trae el repositorio). La migración ya deja Postgres FTS (`spanish` + `unaccent`) + `pg_trgm` listo para cuando crezca, con la misma firma |
 | Validación | **Zod** | El mismo esquema valida formularios, la API y la ingesta |
 | Auth | Supabase Auth (solo administradores en v1) | Estudiantes sin cuenta (D7) |
 | Ingesta y jobs | Scripts TypeScript en `ingestion/`, ejecutados con **GitHub Actions cron** | Gratis y versionado |
@@ -189,7 +189,7 @@ practicascol/
 │  │  ├─ actions/            # ★ Server actions para la UI (contrato)
 │  │  ├─ domain/             # Modelo interno y mappers registro → contrato
 │  │  ├─ search/             # Motor de búsqueda
-│  │  ├─ repo/               # Acceso a datos (memoria hoy, Supabase en Fase 1)
+│  │  ├─ repo/               # Acceso a datos (memoria con mocks; Supabase con USE_MOCKS=false)
 │  │  └─ profile.ts          # Cookie del perfil
 │  └─ test/                  # [CLAUDE] Utilidades de tests
 ├─ ingestion/                # [CLAUDE] Adaptadores, normalizadores, dedupe y jobs
@@ -437,7 +437,8 @@ listSources(): Promise<{ name: string; url: string; method: 'api' | 'scraping' |
 
 **Implementado (base):** en `ingestion/` (guía en `ingestion/README.md`) ya están los tipos (`types.ts`), los normalizadores puros por campo y `normalizeDraft` (`normalize/`), la deduplicación (`dedupe.ts`), la descarga respetuosa (`http.ts`), el *store* en memoria (`store.ts`), el orquestador con reporte por fuente (`pipeline.ts`), el job de vencimiento (`jobs/expire.ts`), el adaptador CSV con su plantilla y el CLI `npm run ingest`.
 Regla de publicación: todo lo que entra de forma automática queda `en_revision`, salvo que la fuente tenga `autoPublish` **y** los campos críticos salgan con confianza alta y sin ninguna observación (ahí pasa a `publicada`); si la fecha límite ya pasó queda `vencida`.
-Falta: el *store* sobre Supabase, los adaptadores de fuentes reales, el cron y la verificación de enlaces.
+También están el *store* sobre Supabase (`ingestion/stores/supabase.ts`, `--store=supabase`), los conectores ATS (Greenhouse y Lever) y el CLI de administración (`npm run admin`).
+Falta: más adaptadores de fuentes reales, el cron y la verificación de enlaces.
 
 ---
 
@@ -446,7 +447,9 @@ Falta: el *store* sobre Supabase, los adaptadores de fuentes reales, el cron y l
 `municipalities` · `institutions` · `programs` (→ institution, level, nbc) · `knowledge_areas` (NBC) · `organizations` · `sources` · `raw_items` (payload crudo, hash, source, fetched_at) · `opportunities` (todos los campos de §11, más `status`, `dedupe_hash`, `needs_review`, `first_seen_at`, `last_verified_at`, `search_vector`) · `opportunity_levels` · `opportunity_programs` · `opportunity_knowledge_areas` · `opportunity_institutions` (restricción opcional) · `opportunity_sources` (N:M) · `issue_reports` · `admin_users`.
 v2: `student_accounts`, `saved_opportunities`, `saved_searches`, `notifications`.
 RLS: el público lee `publicada` y `vencida` (la vencida solo por su URL directa); escriben solo el rol admin y el service role (ingesta).
-Migración inicial: `supabase/migrations/20261113000000_init.sql` (se aplica en la Fase 1). El modelo interno en TS está en `src/server/domain/types.ts`.
+Además: `opportunities.review_notes` (observaciones de la ingesta), `organizations.normalized_name` (única; evita organizaciones repetidas), `opportunity_sources.position` (0 = fuente principal) e `ingestion_runs` (reporte de cada corrida).
+Migraciones (**ya aplicadas** al proyecto Supabase del PO con `npx supabase db push --remote`): `supabase/migrations/20261113000000_init.sql` (esquema y RLS) y `20261116000000_catalog.sql` (catálogo y fuentes; generado con `npm run db:catalog` desde `src/lib/catalog`, no se edita a mano). El modelo interno en TS está en `src/server/domain/types.ts` y el mapeo fila ↔ registro en `src/server/repo/supabase-mappers.ts`.
+**Repositorio Supabase implementado:** la app lee de Supabase con `USE_MOCKS=false` (§6). La ingesta escribe con `npm run ingest -- … --store=supabase` y la revisión se hace con `npm run admin` (ver `ingestion/README.md`). Los reportes de error los inserta el servidor con la clave secreta; no hay inserción pública.
 
 ---
 
@@ -487,6 +490,8 @@ Migración inicial: `supabase/migrations/20261113000000_init.sql` (se aplica en 
 | Fecha | Autor | Tipo | Descripción | Estado |
 |-------|-------|------|-------------|--------|
 | 2026-11-16 | Claude | Entrega | **Conectores de ATS (Greenhouse y Lever)** en rama `claude/ats`: adaptadores con filtro Colombia + prácticas, extracto ≤ 300 caracteres y sin datos de reclutadores; registro `ingestion/sources/ats.ts` (Power Digital Marketing, Clara, Cobre, Wizeline, La Haus, Yuno); CLI `npm run ingest -- --ats`. Prueba real: Power Digital trae 7 prácticas (remotas); las demás hoy tienen 0. SmartRecruiters descartado por `robots.txt`; Ashby pendiente del PO. Normalizadores con términos en inglés (intern, trainee, student, hybrid, remote). Construido por Fable 5.2 y terminado por Opus 5.5, porque Fable alcanzó su límite de uso. 380 tests | Cerrado |
+| 2026-11-16 | Claude | Entrega | **Fase 1 (lado Claude): Supabase conectado** en rama `claude/fase-1`: esquema + catálogo aplicados al proyecto del PO, repositorio Supabase (clave secreta solo en servidor, caché corta), store de ingesta (`--store=supabase`), CLI de administración (`npm run admin -- revision|aprobar|retirar|vencer|publicadas`). Prueba real con datos de ejemplo y limpieza. 446 tests | Cerrado |
+| 2026-11-16 | Claude | Solicitud → Codex | **Panel de administración (UI)** sobre las acciones que se definirán en `src/server/actions/admin.ts` (Fase 1b, con Supabase Auth): lista de revisión, ver, aprobar, retirar. Mientras tanto el PO usa `npm run admin` | Abierto |
 | 2026-11-14 | Claude | Entrega | **Plantilla Excel para carga manual:** `ingestion/templates/convocatorias.xlsx` (encabezado fijo, listas desplegables, notas por columna, hoja de instrucciones) generada con `npm run template:xlsx`; lector `.xlsx` en la ingesta (`npm run ingest -- --xlsx …`). La plantilla CSV vuelve a usar coma. `exceljs` como devDependency (solo tooling) | Cerrado |
 | 2026-11-14 | Claude | Revisión | **Mezcla a `main` aprobada por el PO:** `claude/ingesta` (motor de ingesta, revisado por Opus con entradas reales difíciles: fechas, pagos, programas "afines", remotas, fuera de cobertura y vencidas) y `codex/fuente-en-tarjeta` (revisado: check, build y cero cambios en carpetas de Claude). Se documentó `NEXT_PUBLIC_SITE_URL` en `.env.example`. Codex trabaja en el worktree `C:\practicascol-codex` y Claude en `C:\practicascol`: cada uno en su carpeta, nunca cambiar de rama en la carpeta del otro | Cerrado |
 | 2026-11-14 | Claude | Entrega | **Motor de ingesta (base)** en rama `claude/ingesta`: normalizadores (fechas, municipio, niveles, tipo, modalidad, pago, duración, semestre, programas, instituciones), deduplicación (hash + trigramas), descarga respetuosa (robots.txt, ≥2 s por host, 429), pipeline con reporte por fuente, job de vencimiento, adaptador CSV + plantilla `ingestion/templates/convocatorias.csv` y CLI `npm run ingest`. 322 tests en total; incluye fechas mes/año y pago de contrato de aprendizaje como apoyo de sostenimiento | Cerrado |
