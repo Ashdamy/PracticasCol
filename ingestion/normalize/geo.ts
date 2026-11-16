@@ -14,7 +14,7 @@ const CATALOG = MUNICIPALITIES.map((m) => ({
   re: new RegExp(`\\b${clean(m.name)}\\b`),
 }));
 
-const REMOTE_RE = /\b(remot[oa]s?|teletrabajo|virtual|home office|desde casa|trabajo en casa)\b/;
+const REMOTE_RE = /\b(remot[oa]s?|remote|teletrabajo|virtual|home office|desde casa|trabajo en casa)\b/;
 /** Otros departamentos y capitales del país. */
 const ELSEWHERE_RE =
   /\b(santander|cundinamarca|bogota|valle del cauca|atlantico|bolivar|boyaca|risaralda|quindio|tolima|huila|narino|cauca|meta|cesar|magdalena|cordoba|sucre|choco|casanare|arauca|putumayo|guajira)\b/;
@@ -69,6 +69,10 @@ export function normalizeMunicipality(text: string | null | undefined): Normaliz
   }
 
   if (remote) return result({ slug: null, remote: true }, "alta");
+  // "Colombia" a secas (común en los ATS): está en el país, pero no se sabe en qué municipio.
+  if (segments.length > 0 && segments.every((s) => s === "colombia")) {
+    return result({ slug: null, remote: false }, "media", `La fuente solo indica el país ("${excerpt(text)}")`);
+  }
   if (METRO_RE.test(all)) {
     return result(
       { slug: null, remote: false },

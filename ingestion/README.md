@@ -203,6 +203,39 @@ npm run ingest -- --xlsx ingestion/templates/convocatorias.xlsx --dry-run
 
 El CLI trabaja contra un *store* en memoria sembrado con los datos de prueba (`MOCK_OPPORTUNITIES`), para que la deduplicación tenga contra qué comparar. Sirve para **validar un archivo** antes de cargarlo: muestra el reporte y, por cada fila que queda en revisión, las observaciones que hay que corregir (fecha que no se entendió, programa que no está en el catálogo, enlace sin `https`, etc.). No escribe en ninguna base de datos. El código de salida es `1` si hubo errores y `2` si los argumentos son inválidos (por ejemplo, pasar un `.xlsx` a `--csv`).
 
+## Conectores de ATS (Greenhouse y Lever)
+
+Algunas empresas publican sus vacantes en sistemas de selección (ATS) con API pública, pensada para mostrar ofertas en otros sitios. Hay conectores para dos:
+
+| ATS | URL | `robots.txt` |
+|-----|-----|--------------|
+| Greenhouse | `boards-api.greenhouse.io/v1/boards/{token}/jobs?content=true` | Solo prohíbe `/embed/` |
+| Lever | `api.lever.co/v0/postings/{empresa}?mode=json` | Permite todo (`Crawl-delay: 1`) |
+
+- **Código:** `adapters/ats/greenhouse.ts`, `adapters/ats/lever.ts` y lo común en `adapters/ats/common.ts`. Siempre usan `ctx.http` (robots.txt, ≥ 2 s por host y User-Agent genérico).
+- **Filtro:** solo ofertas en Colombia (país, municipio del catálogo o "Remote - Colombia") y, si `onlyInternships`, solo títulos de práctica en español o inglés (practicante, pasantía, aprendiz, intern, trainee…).
+- **Qué se guarda:** título, ubicación, modalidad, salario si existe, enlaces y un **extracto de máximo 300 caracteres**. Nunca la descripción completa (§12) ni datos de personas: los nombres de reclutadores o *hiring managers*, los correos y los teléfonos se descartan (Ley 1581).
+- **Publicación:** ninguna fuente ATS publica sola; todo entra `en_revision`. Como estos ATS no publican fecha de cierre, la verificación de enlaces (Fase 3) es la que detecta las ofertas retiradas.
+
+### Agregar una empresa
+1. Confirma con el PO que se puede usar (AGENTS.md §12).
+2. Encuentra su token: es la última parte de la URL de su página de empleo (`job-boards.greenhouse.io/{token}` o `jobs.lever.co/{empresa}`).
+3. Agrega una línea en `sources/ats.ts`: `source("greenhouse", "token", "Nombre de la empresa")`.
+4. Pruébala sola: `npm run ingest -- --ats=token --dry-run`.
+
+### Por qué no SmartRecruiters ni Ashby
+- **SmartRecruiters:** su `robots.txt` dice `Disallow: /` para bots genéricos. No se automatiza, aunque la API responda. Así quedan fuera, por ejemplo, Evolution y Avery Dennison; sus ofertas entran a mano o por un agregador aliado.
+- **Ashby:** su `robots.txt` responde 401, y `http.ts` lo trata como "no permitido". Queda pendiente de decisión del PO.
+
+Detalle y resultados del sondeo en [`docs/automatizacion-fuentes.md`](../docs/automatizacion-fuentes.md).
+
+### CLI
+```
+npm run ingest -- --ats --dry-run               # todas las fuentes de sources/ats.ts
+npm run ingest -- --ats=powerdigitalmarketing --dry-run
+```
+Hace peticiones reales a las APIs. El log muestra, por fuente, cuántas ofertas tiene el tablero, cuántas son en Colombia y cuántas prácticas pasan el filtro. Que una fuente devuelva 0 prácticas puede ser normal.
+
 ## Job de vencimiento
 
 `expireOpportunities(records, today)` es pura: recibe las oportunidades y la fecha de hoy en Colombia (`todayInBogota()`), y devuelve los ids de las `publicada` cuya fecha límite ya pasó. El día de cierre todavía cuenta como abierto. Quien la llame (el cron de GitHub Actions, en la Fase 3) aplica el cambio de estado.

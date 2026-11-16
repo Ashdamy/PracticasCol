@@ -1,41 +1,52 @@
 /**
- * CLI de ingesta manual.
+ * CLI de ingesta.
  *   npm run ingest -- --xlsx <ruta> [--dry-run] [--json] [--auto-publish]
  *   npm run ingest -- --csv <ruta> …      (alternativa en CSV)
  *   npm run ingest -- --archivo <ruta> …  (elige por la extensión: .xlsx o .csv)
+ *   npm run ingest -- --ats [--dry-run] [--json]        (todas las fuentes de ingestion/sources/ats.ts; usa la red)
+ *   npm run ingest -- --ats=<id> [--dry-run] [--json]   (una sola fuente ATS)
  *
  * Hoy trabaja contra un store en memoria sembrado con los datos de prueba (para que la deduplicación
- * tenga contra qué comparar): sirve para validar un archivo antes de cargarlo. No escribe en ninguna base de datos.
+ * tenga contra qué comparar): sirve para validar un archivo o una fuente antes de cargarla. No escribe en ninguna base de datos.
  */
 import { extname, resolve } from "node:path";
-import { STATUS_LABELS } from "@/lib/catalog/labels";
+import { getMunicipality } from "@/lib/catalog/geo";
+import { MODALITY_LABELS, STATUS_LABELS } from "@/lib/catalog/labels";
 import { MOCK_OPPORTUNITIES, MOCK_ORGANIZATIONS } from "@/lib/mocks/data";
 import { createCsvAdapter } from "./adapters/csv";
 import { createXlsxAdapter } from "./adapters/xlsx";
 import { createPoliteFetcher } from "./http";
 import { runIngestion, type IngestionItemResult, type IngestionRun } from "./pipeline";
+import { ATS_SOURCES, createAtsAdapter, findAtsSource } from "./sources/ats";
 import { createMemoryStore } from "./store";
-import type { IngestionReport } from "./types";
+import type { IngestionLogger, IngestionReport, SourceAdapter } from "./types";
 
 type FileKind = "csv" | "xlsx";
 
 interface CliArgs {
   /** Archivo a cargar y cómo leerlo (`null` si no se indicó ninguno). */
   file: { path: string; kind: FileKind } | null;
+  /** `"todas"`, el id de una fuente ATS o `null` si no se pidió `--ats`. */
+  ats: string | null;
   dryRun: boolean;
   json: boolean;
   autoPublish: boolean;
   help: boolean;
 }
 
+const ALL_ATS = "todas";
+
 const USAGE = `Uso: npm run ingest -- --xlsx <ruta> [--dry-run] [--json] [--auto-publish]
+     npm run ingest -- --ats[=<id>] [--dry-run] [--json]
 
   --xlsx <ruta>     Libro de Excel con convocatorias (plantilla: ingestion/templates/convocatorias.xlsx)
   --csv <ruta>      Archivo CSV con convocatorias (plantilla: ingestion/templates/convocatorias.csv)
   --archivo <ruta>  Cualquiera de los dos: se elige por la extensión (.xlsx o .csv)
+  --ats             Consulta todas las fuentes ATS de ingestion/sources/ats.ts (usa la red)
+  --ats=<id>        Consulta una sola fuente ATS: ${ATS_SOURCES.map((s) => s.token).join(", ")}
   --dry-run         Solo valida y muestra el reporte; no guarda nada
   --json            Imprime el resultado en JSON
-  --auto-publish    Publica sin revisión las filas con todos los datos en confianza alta`;
+  --auto-publish    Publica sin revisión las filas con todos los datos en confianza alta (solo archivos)`;
 
 const FILE_OPTIONS = ["--xlsx", "--csv", "--archivo"] as const;
 type FileOption = (typeof FILE_OPTIONS)[number];
@@ -62,7 +73,7 @@ function resolveFile(option: FileOption, path: string | undefined): NonNullable<
 }
 
 export function parseArgs(argv: readonly string[]): CliArgs {
-  const args: CliArgs = { file: null, dryRun: false, json: false, autoPublish: false, help: false };
+  const args: CliArgs = { file: null, ats: null, dryRun: false, json: false, autoPublish: false, help: false };
   const setFile = (option: FileOption, path: string | undefined) => {
     if (args.file) throw new Error("Indica un solo archivo (--xlsx, --csv o --archivo)");
     args.file = resolveFile(option, path);
@@ -74,17 +85,34 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       setFile(option, argv[i + 1]);
       i += 1;
     } else if (option) setFile(option, arg.slice(option.length + 1));
-    else if (arg === "--dry-run") args.dryRun = true;
+    else if (arg === "--ats") args.ats = ALL_ATS;
+    else if (arg.startsWith("--ats=")) {
+      const id = arg.slice("--ats=".length).trim();
+      if (!id) throw new Error("Falta el id de la fuente después de --ats=");
+      args.ats = id;
+    } else if (arg === "--dry-run") args.dryRun = true;
     else if (arg === "--json") args.json = true;
     else if (arg === "--auto-publish") args.autoPublish = true;
     else if (arg === "--help" || arg === "-h") args.help = true;
     else throw new Error(`Opción desconocida: ${arg}`);
   }
+  if (args.ats && args.file) throw new Error("Usa --ats o un archivo, no los dos a la vez");
+  if (args.ats && args.autoPublish) throw new Error("--auto-publish no aplica a --ats: las fuentes ATS siempre quedan en revisión");
   return args;
 }
 
+/** Adaptadores de las fuentes ATS pedidas. Ninguna tiene `autoPublish`. */
+function atsAdapters(selection: string): SourceAdapter[] {
+  if (selection === ALL_ATS) return ATS_SOURCES.map(createAtsAdapter);
+  const source = findAtsSource(selection);
+  if (!source) {
+    throw new Error(`No hay una fuente ATS «${selection}». Disponibles: ${ATS_SOURCES.map((s) => s.token).join(", ")}`);
+  }
+  return [createAtsAdapter(source)];
+}
+
 const REPORT_ROWS: [label: string, value: (r: IngestionReport) => number][] = [
-  ["Filas leídas", (r) => r.fetched],
+  ["Leídas (filas u ofertas)", (r) => r.fetched],
   ["Sin cambios", (r) => r.unchanged],
   ["Nuevas", (r) => r.created],
   ["Actualizadas", (r) => r.updated],
@@ -95,10 +123,20 @@ const REPORT_ROWS: [label: string, value: (r: IngestionReport) => number][] = [
   ["Errores", (r) => r.errors.length],
 ];
 
+/** "Medellín · Híbrida" (o "sin municipio · Remota"). Vacío si el ítem no llegó a normalizarse. */
+function describePlace(item: IngestionItemResult): string {
+  if (!item.modality) return "";
+  const municipality = getMunicipality(item.municipalitySlug)?.name ?? "sin municipio";
+  return ` (${municipality} · ${MODALITY_LABELS[item.modality]})`;
+}
+
 function describeItem(item: IngestionItemResult): string {
-  const row = item.externalId ? `Fila ${item.externalId}` : item.url;
+  // En las cargas manuales el identificador es el número de fila; en las demás fuentes, la URL de la oferta.
+  const manual = item.sourceId.startsWith("src-manual");
+  const row = manual && item.externalId ? `Fila ${item.externalId}` : item.url;
   const status = item.status ? STATUS_LABELS[item.status] : "—";
-  const lines = [`• ${row}: ${item.title ?? "(sin título)"} [${status}, confianza ${item.confidence ?? "—"}]`];
+  const place = manual ? "" : describePlace(item);
+  const lines = [`• ${row}: ${item.title ?? "(sin título)"}${place} [${status}, confianza ${item.confidence ?? "—"}]`];
   for (const issue of item.issues) lines.push(`    - ${issue}`);
   if (item.status === "en_revision" && item.issues.length === 0) {
     lines.push("    - Sin observaciones: queda en revisión porque esta carga no publica automáticamente");
@@ -133,26 +171,36 @@ export function formatRun(run: IngestionRun): string {
 
 async function main(): Promise<number> {
   let args: CliArgs;
+  let adapters: SourceAdapter[] = [];
   try {
     args = parseArgs(process.argv.slice(2));
+    if (args.ats) adapters = atsAdapters(args.ats);
   } catch (error) {
     console.error(`${error instanceof Error ? error.message : String(error)}\n\n${USAGE}`);
     return 2;
   }
-  if (args.help || !args.file) {
+  if (args.help || (!args.file && !args.ats)) {
     console.log(USAGE);
     return args.help ? 0 : 2;
   }
 
-  const options = { filePath: resolve(args.file.path), autoPublish: args.autoPublish };
-  const adapter = args.file.kind === "xlsx" ? createXlsxAdapter(options) : createCsvAdapter(options);
+  if (args.file) {
+    const options = { filePath: resolve(args.file.path), autoPublish: args.autoPublish };
+    adapters = [args.file.kind === "xlsx" ? createXlsxAdapter(options) : createCsvAdapter(options)];
+  }
+  // El progreso va por stderr para no ensuciar la salida de --json.
+  const log: IngestionLogger = {
+    info: (message) => console.error(message),
+    warn: (message) => console.error(`Aviso: ${message}`),
+  };
   const store = createMemoryStore({ opportunities: MOCK_OPPORTUNITIES, organizations: MOCK_ORGANIZATIONS });
   const run = await runIngestion({
-    adapters: [adapter],
+    adapters,
     store,
     http: createPoliteFetcher(),
     now: new Date(),
     dryRun: args.dryRun,
+    log: args.ats ? log : undefined,
   });
 
   if (args.json) console.log(JSON.stringify(run, null, 2));

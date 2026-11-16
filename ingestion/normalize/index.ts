@@ -183,9 +183,11 @@ export function normalizeDraft(draft: OpportunityDraft, options: NormalizeOption
       ? result("remota" as const, "alta")
       : normalizeModality(draft.modalityText);
   const modality = take("modality", "Modalidad", modalityResult);
-  // Una oferta remota no necesita municipio.
+  // Una oferta remota no necesita municipio: si la fuente solo trae el país o una zona sin municipio
+  // exacto (p. ej. "Colombia" en un ATS), se trata como remota con confianza alta.
   const municipalityOptional =
-    modality === "remota" && (isBlank(draft.municipalityText) || municipalityResult.value.remote);
+    modality === "remota" &&
+    (isBlank(draft.municipalityText) || municipalityResult.value.remote || municipalityResult.value.slug === null);
   const municipalitySlug = take(
     "municipality",
     "Municipio",

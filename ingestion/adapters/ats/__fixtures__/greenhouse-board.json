@@ -1,0 +1,75 @@
+{
+  "jobs": [
+    {
+      "id": 1001,
+      "internal_job_id": 9001,
+      "title": "Marketing Intern",
+      "updated_at": "2026-11-10T10:30:00-05:00",
+      "location": { "name": "Medellín, Antioquia, Colombia" },
+      "absolute_url": "https://boards.greenhouse.io/empresaficticia/jobs/1001",
+      "content": "&lt;p&gt;En Empresa Ficticia ayudamos a marcas de Am&amp;eacute;rica Latina a crecer en l&amp;iacute;nea.&amp;nbsp;Buscamos una persona que est&amp;eacute; cursando una carrera universitaria y quiera aprender &amp;amp; aportar.&lt;/p&gt;&lt;p&gt;Si tienes dudas, escr&amp;iacute;bele a nuestra recruiter Fulana Inventada al correo fulana.inventada@ficticia.example. Trabajar&amp;aacute;s con el equipo de pauta digital.&lt;/p&gt;&lt;h3&gt;Lo que har&amp;aacute;s&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;Apoyar la creaci&amp;oacute;n de campa&amp;ntilde;as en redes sociales&lt;/li&gt;&lt;li&gt;Preparar reportes semanales de resultados para los clientes&lt;/li&gt;&lt;li&gt;Investigar tendencias y proponer ideas de contenido&lt;/li&gt;&lt;/ul&gt;&lt;script&gt;var rastreo = 1;&lt;/script&gt;&lt;p&gt;Ofrecemos acompa&amp;ntilde;amiento, horario flexible y un ambiente de aprendizaje constante durante todo el semestre.&lt;/p&gt;",
+      "departments": [{ "id": 10, "name": "Marketing" }],
+      "offices": [{ "id": 20, "name": "Medellín", "location": "Medellín, Antioquia, Colombia" }],
+      "metadata": [
+        { "id": 1, "name": "Recruiter", "value": "Fulana Inventada", "value_type": "short_text" },
+        { "id": 2, "name": "Workplace Type", "value": "Hybrid", "value_type": "single_select" }
+      ]
+    },
+    {
+      "id": 1002,
+      "title": "Sales Intern",
+      "updated_at": "2026-11-09T09:00:00-05:00",
+      "location": { "name": "Austin, Texas, United States" },
+      "absolute_url": "https://boards.greenhouse.io/empresaficticia/jobs/1002",
+      "content": "&lt;p&gt;Join our fictional sales team in Austin.&lt;/p&gt;",
+      "departments": [{ "id": 11, "name": "Sales" }],
+      "offices": [{ "id": 21, "name": "Austin", "location": "Austin, Texas, United States" }],
+      "metadata": null
+    },
+    {
+      "id": 1003,
+      "title": "Senior Data Engineer",
+      "updated_at": "2026-11-08T09:00:00-05:00",
+      "location": { "name": "Bogotá, Colombia" },
+      "absolute_url": "https://boards.greenhouse.io/empresaficticia/jobs/1003",
+      "content": "&lt;p&gt;Cargo de tiempo completo para personas con experiencia.&lt;/p&gt;",
+      "departments": [{ "id": 12, "name": "Data" }],
+      "offices": [],
+      "metadata": null
+    },
+    {
+      "id": 1004,
+      "title": "Practicante de Diseño",
+      "updated_at": "2026-11-07T09:00:00-05:00",
+      "location": { "name": "Remote - Colombia" },
+      "absolute_url": "https://boards.greenhouse.io/empresaficticia/jobs/1004",
+      "content": "&lt;p&gt;Pr&amp;aacute;ctica remota para estudiantes de dise&amp;ntilde;o gr&amp;aacute;fico.&lt;/p&gt;",
+      "departments": [{ "id": 13, "name": "Diseño" }],
+      "offices": [],
+      "metadata": null
+    },
+    {
+      "id": 1005,
+      "title": "Internal Communications Manager",
+      "updated_at": "2026-11-06T09:00:00-05:00",
+      "location": { "name": "Medellín, Colombia" },
+      "absolute_url": "https://boards.greenhouse.io/empresaficticia/jobs/1005",
+      "content": "&lt;p&gt;Lidera la comunicaci&amp;oacute;n interna.&lt;/p&gt;",
+      "departments": [],
+      "offices": [],
+      "metadata": null
+    },
+    {
+      "id": 1006,
+      "title": "Finance Trainee",
+      "updated_at": "2026-11-05T09:00:00-05:00",
+      "location": { "name": "LatAm" },
+      "absolute_url": "https://boards.greenhouse.io/empresaficticia/jobs/1006",
+      "content": "&lt;p&gt;Programa de entrenamiento en finanzas.&lt;/p&gt;",
+      "departments": [{ "id": 14, "name": "Finanzas" }],
+      "offices": [{ "id": 22, "name": "Colombia", "location": "Envigado, Antioquia, Colombia" }],
+      "metadata": []
+    }
+  ],
+  "meta": { "total": 6 }
+}

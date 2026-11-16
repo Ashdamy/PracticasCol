@@ -1,0 +1,86 @@
+[
+  {
+    "id": "aaaa1111-0000-4000-8000-000000002001",
+    "text": "Pasante de Datos",
+    "hostedUrl": "https://jobs.lever.co/empresaficticia/aaaa1111-0000-4000-8000-000000002001",
+    "applyUrl": "https://jobs.lever.co/empresaficticia/aaaa1111-0000-4000-8000-000000002001/apply",
+    "createdAt": 1794324600000,
+    "country": "CO",
+    "workplaceType": "hybrid",
+    "categories": {
+      "location": "Medellín",
+      "allLocations": ["Medellín"],
+      "commitment": "Internship",
+      "team": "Data",
+      "department": "Tecnología"
+    },
+    "descriptionPlain": "En Empresa Ficticia construimos herramientas para que más familias encuentren vivienda.\nBuscamos estudiantes de pregrado en ingeniería o estadística que quieran hacer su pasantía con el equipo de datos.\nTu líder será Mengano Inventado, hiring manager del equipo; puedes escribirle a mengano@ficticia.example.\nVas a apoyar la limpieza de datos, la construcción de tableros y el análisis de experimentos junto a personas con mucha experiencia, en un ambiente donde se aprende todos los días y se celebra cada entrega.",
+    "description": "<div>En Empresa Ficticia construimos herramientas…</div>",
+    "lists": [
+      {
+        "text": "Requisitos",
+        "content": "<li>Estar cursando desde 7.º semestre</li><li>SQL básico</li><li>Manejo de hojas de cálculo</li><li>Disponibilidad de 6 meses</li><li>Aval de práctica de tu universidad</li><li>Inglés intermedio</li>"
+      },
+      {
+        "text": "Beneficios",
+        "content": "<li>Horario flexible</li><li>Días libres por cumpleaños</li>"
+      }
+    ],
+    "salaryRange": { "min": 1750000, "max": 1750000, "currency": "COP", "interval": "per-month-salary" },
+    "hiringManager": { "name": "Mengano Inventado", "email": "mengano@ficticia.example" },
+    "owner": { "name": "Zutana Inventada" }
+  },
+  {
+    "id": "aaaa1111-0000-4000-8000-000000002002",
+    "text": "Software Engineering Intern",
+    "hostedUrl": "https://jobs.lever.co/empresaficticia/aaaa1111-0000-4000-8000-000000002002",
+    "applyUrl": "https://jobs.lever.co/empresaficticia/aaaa1111-0000-4000-8000-000000002002/apply",
+    "createdAt": 1790856000000,
+    "country": "US",
+    "workplaceType": "on-site",
+    "categories": { "location": "San Francisco, CA", "allLocations": ["San Francisco, CA"], "commitment": "Internship", "team": "Engineering" },
+    "descriptionPlain": "Summer internship at our fictional San Francisco office.",
+    "lists": []
+  },
+  {
+    "id": "aaaa1111-0000-4000-8000-000000002003",
+    "text": "Backend Engineer",
+    "hostedUrl": "https://jobs.lever.co/empresaficticia/aaaa1111-0000-4000-8000-000000002003",
+    "applyUrl": "https://jobs.lever.co/empresaficticia/aaaa1111-0000-4000-8000-000000002003/apply",
+    "createdAt": 1790856000000,
+    "country": "CO",
+    "workplaceType": "remote",
+    "categories": { "location": "Bogotá, Colombia", "allLocations": ["Bogotá, Colombia"], "commitment": "Full-time", "team": "Engineering" },
+    "descriptionPlain": "Cargo de tiempo completo para personas con experiencia.",
+    "lists": []
+  },
+  {
+    "id": "aaaa1111-0000-4000-8000-000000002004",
+    "text": "Customer Success Trainee",
+    "hostedUrl": "https://jobs.lever.co/empresaficticia/aaaa1111-0000-4000-8000-000000002004",
+    "applyUrl": "https://jobs.lever.co/empresaficticia/aaaa1111-0000-4000-8000-000000002004/apply",
+    "createdAt": 1790856000000,
+    "workplaceType": "remote",
+    "categories": { "location": "Mexico City", "allLocations": ["Mexico City", "Colombia"], "commitment": "Trainee", "team": "Customer Success" },
+    "descriptionPlain": "",
+    "description": "<p>Join our fictional customer success team as a trainee.</p><p>You will learn by doing.</p>",
+    "lists": [
+      {
+        "text": "What you'll need",
+        "content": "<ul><li>Currently enrolled as an undergraduate student</li><li>Send your questions to the recruiter at talento@ficticia.example</li><li>This bullet is far too long to be useful as a short requirement because it keeps describing in great detail every single expectation the fictional team could ever have about a trainee, well beyond what fits in a card</li><li>Good written English</li><li>Curiosity</li><li>Empathy</li><li>Basic spreadsheet skills</li><li>Availability for 6 months</li></ul>"
+      }
+    ],
+    "salaryRange": { "min": 9000, "max": 12000, "currency": "USD", "interval": "per-year-salary" }
+  },
+  {
+    "id": "aaaa1111-0000-4000-8000-000000002005",
+    "text": "Estudiante en práctica - Finanzas",
+    "hostedUrl": "https://jobs.lever.co/empresaficticia/aaaa1111-0000-4000-8000-000000002005",
+    "createdAt": "no-es-un-numero",
+    "country": "CO",
+    "workplaceType": "unspecified",
+    "categories": { "location": "Bogotá", "allLocations": ["Bogotá"], "commitment": "Práctica", "team": "Finanzas" },
+    "descriptionPlain": "Práctica universitaria en el equipo de finanzas.",
+    "lists": []
+  }
+]

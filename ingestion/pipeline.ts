@@ -3,7 +3,7 @@
  * Cada adaptador y cada ítem corren aislados: un fallo no detiene a los demás (AGENTS.md §12).
  */
 import { createHash } from "node:crypto";
-import type { OpportunityStatus } from "@/lib/contracts";
+import type { Modality, OpportunityStatus } from "@/lib/contracts";
 import { todayInBogota } from "@/lib/time";
 import { findDuplicate } from "./dedupe";
 import type { PoliteFetcher } from "./http";
@@ -28,6 +28,9 @@ export interface IngestionItemResult {
   outcome: ItemOutcome;
   status: OpportunityStatus | null;
   confidence: Confidence | null;
+  /** Lugar y modalidad ya normalizados (`null` si el ítem no llegó a normalizarse). */
+  municipalitySlug: string | null;
+  modality: Modality | null;
   issues: string[];
 }
 
@@ -136,7 +139,9 @@ export async function runIngestion(options: RunIngestionOptions): Promise<Ingest
 
     report.fetched = rawItems.length;
     if (rawItems.length === 0) {
-      report.warnings.push(`${adapter.name} devolvió 0 ítems: posible cambio en la fuente`);
+      // En fuentes filtradas (p. ej. ATS con solo prácticas) puede ser normal; el log del adaptador dice
+      // cuántas ofertas tenía el tablero. Si el tablero también viene vacío, sí puede haber un cambio.
+      report.warnings.push(`${adapter.name} devolvió 0 ítems: puede que hoy no haya ofertas que pasen el filtro o que la fuente haya cambiado (revisa el log)`);
     }
 
     for (const raw of rawItems) {
@@ -148,6 +153,8 @@ export async function runIngestion(options: RunIngestionOptions): Promise<Ingest
         outcome: "error",
         status: null,
         confidence: null,
+        municipalitySlug: null,
+        modality: null,
         issues: [],
       };
       items.push(item);
@@ -175,6 +182,8 @@ export async function runIngestion(options: RunIngestionOptions): Promise<Ingest
         item.confidence = normalized.confidence;
         item.issues = [...normalized.issues];
         item.status = candidate.status;
+        item.municipalitySlug = candidate.municipalitySlug;
+        item.modality = candidate.modality;
 
         const duplicate = findDuplicate(candidate, known);
         const sourceRef = candidate.sources[0];

@@ -8,6 +8,8 @@ const TP = "\\btecnic[oa]s? profesional(?:es)?\\b";
 /** "Profesional" que NO habla del nivel de formación. */
 const NOT_LEVEL = "\\b(?:practicas?|practicantes?|experiencia|perfil|desarrollo|crecimiento) profesional(?:es)?\\b";
 
+export const ENGLISH_STUDENT_NOTE = "Término en inglés («student»): se asumió universitario; confirmar";
+
 export function normalizeLevels(text: string | null | undefined): Normalized<EducationLevel[]> {
   if (isBlank(text)) return result([], "baja", "Nivel de formación no indicado");
 
@@ -45,6 +47,10 @@ export function normalizeLevels(text: string | null | undefined): Normalized<Edu
       "baja",
       "Solo se menciona al SENA: se asumió técnico laboral y tecnólogo; confirmar",
     );
+  }
+  // Inglés de los ATS ("university student", "undergraduate"): no dice si es técnico, tecnólogo o universitario.
+  if (found.size === 0 && /\b(students?|undergraduates?|undergrads?)\b/.test(rest)) {
+    return result(["universitario"], "baja", ENGLISH_STUDENT_NOTE);
   }
   if (found.size === 0) {
     return result([], "baja", `No se reconoció el nivel de formación: "${excerpt(text)}"`);
