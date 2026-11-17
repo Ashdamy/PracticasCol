@@ -1,0 +1,55 @@
+.report-trigger { margin-top: 24px; }
+.report-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgb(19 30 25 / 60%);
+}
+.report-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 61;
+  width: min(520px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+  color: var(--foreground);
+}
+.report-title { font-size: 26px; line-height: 1.15; padding-right: 36px; }
+.report-description { margin: 14px 0 24px; color: var(--muted-foreground); font-size: 14px; line-height: 1.6; }
+.report-close { position: absolute; top: 12px; right: 12px; }
+.report-field { display: grid; gap: 8px; margin-top: 20px; font-size: 16px; font-weight: 600; }
+.report-field select, .report-field textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--background);
+  color: var(--foreground);
+  font: inherit;
+  font-weight: 400;
+}
+.report-field textarea { resize: vertical; }
+.report-limit { margin-top: 6px; color: var(--muted-foreground); font-size: 14px; text-align: right; }
+.report-warning, .report-error { padding: 12px; margin-top: 16px; border-radius: 8px; font-size: 14px; line-height: 1.6; }
+.report-warning { color: var(--warning); background: var(--warning-bg); }
+.report-error { color: var(--negative); background: var(--negative-bg); }
+.report-progress { font-size: 14px; color: var(--muted-foreground); }
+.report-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+.report-actions .button { min-height: 44px; }
+.report-confirmation h3 { font-size: 24px; line-height: 1.2; }
+.report-confirmation p { margin: 12px 0 24px; color: var(--muted-foreground); }
+@media (max-width: 480px) {
+  .report-dialog { padding: 20px; }
+  .report-title { font-size: 24px; }
+  .report-actions { flex-direction: column-reverse; }
+  .report-actions .button { width: 100%; }
+}
