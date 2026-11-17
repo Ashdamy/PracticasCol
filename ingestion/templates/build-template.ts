@@ -9,7 +9,7 @@
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import ExcelJS from "exceljs";
-import { MODALITY_LABELS, OPPORTUNITY_TYPE_LABELS } from "@/lib/catalog/labels";
+import { OPPORTUNITY_TYPE_LABELS } from "@/lib/catalog/labels";
 import { MUNICIPALITIES } from "@/lib/catalog/geo";
 import { REQUIRED_COLUMNS, TABULAR_COLUMNS, type TabularColumn } from "../adapters/tabular";
 
@@ -46,7 +46,11 @@ const GUIDE: Record<TabularColumn, ColumnGuide> = {
     examples: "Universitario · Tecnólogo · Técnico profesional · Técnico laboral · Posgrado",
   },
   municipio: { width: 18, what: "Dónde se hace la práctica.", examples: "Medellín · Itagüí · Envigado · Remoto" },
-  modalidad: { width: 16, what: "Forma de trabajo.", examples: "Presencial · Híbrida · Remota" },
+  modalidad: {
+    width: 16,
+    what: "Forma de trabajo. Si la convocatoria no lo dice, elige «Desconocida» o deja la celda vacía: no se asume presencial.",
+    examples: "Presencial · Híbrida · Remota · Desconocida",
+  },
   pago: {
     width: 22,
     what: "Cuánto pagan al mes o qué tipo de pago es.",
@@ -154,9 +158,10 @@ const LISTS: Partial<Record<TabularColumn, ListRule>> = {
     prompt: "Elige de la lista. Si la fuente usa otro nombre, puedes escribirlo.",
   },
   modalidad: {
-    options: Object.values(MODALITY_LABELS),
+    // «Desconocida» (o la celda vacía) queda como `no_especificada`: ver normalize/modality.ts.
+    options: ["Presencial", "Híbrida", "Remota", "Desconocida"],
     mode: "strict",
-    prompt: "Elige de la lista.",
+    prompt: "Elige de la lista. Si la convocatoria no lo dice, elige «Desconocida».",
   },
   nivel: {
     options: LEVEL_OPTIONS,

@@ -3,7 +3,7 @@
 > **Fuente única de verdad** para todos los que trabajan en el repo: el humano (Product Owner), **Claude** (planeación, arquitectura y lógica) y **Codex** (diseño frontend y UI/UX).
 > Léelo completo antes de empezar cualquier tarea. Si una decisión cambia, se actualiza **este** archivo y se anota en el [Registro de coordinación](#16-registro-de-coordinación).
 >
-> Última actualización: 2026-11-16 · Estado: **Fase 1. Supabase conectado (esquema, catálogo, repositorio, ingesta y CLI de administración). Pendiente: cargar el catálogo real de convocatorias y el panel de administración (UI + Supabase Auth)**
+> Última actualización: 2026-11-17 · Estado: **Fase 1. Supabase conectado (esquema, catálogo, repositorio, ingesta y CLI de administración). Pendiente: cargar el catálogo real de convocatorias y el panel de administración (UI + Supabase Auth)**
 >
 > **Arranque rápido:** `npm install` → `npm run dev` (http://localhost:3000) · `npm run check` (tipos + lint + tests). Con `USE_MOCKS=true` (default) no hace falta base de datos; con `USE_MOCKS=false` la app lee de Supabase (§6).
 
@@ -96,7 +96,7 @@ Otras referencias normativas (contexto, por verificar): Ley 2043 de 2020 (las pr
 `tecnico_laboral` · `tecnico_profesional` · `tecnologo` · `universitario` · `posgrado`
 
 ### Modalidad (`Modality`)
-`presencial` · `hibrida` · `remota`
+`presencial` · `hibrida` · `remota` · `no_especificada` (etiqueta «Modalidad desconocida»: la fuente no lo dice; **nunca** se asume presencial)
 
 ### Sector de la organización (`Sector`)
 `privado` · `publico` · `mixto` · `ong`
@@ -330,6 +330,7 @@ export default function Page(props: PageProps<"/practicas">) {
 ### Comportamientos que la UI debe conocer
 - **Datos de prueba que cubren todos los casos:** una oferta que cierra hoy, una que cierra mañana, varias que cierran en ≤ 7 días, una `hasta_agotar_cupos`, una `no_publicada`, una 100% remota, una exclusiva de ciertas instituciones, una `isStale`, una vencida (visible solo por URL: `/practicas/practica-comunicacion-servicios-publicos-valle`) y una retirada (nunca aparece).
 - **Municipio:** al filtrar por municipio, las ofertas **remotas** siempre se incluyen.
+- **Modalidad desconocida (v0.1.2):** `modality` puede ser `no_especificada` (`MODALITY_LABELS` → «Modalidad desconocida»). Filtrar por `presencial`, `hibrida` o `remota` **no** las incluye; tienen su propia opción de faceta (`modalidad=no_especificada`). Sin filtro de modalidad aparecen todas. En el filtro de municipio se comportan como una presencial: solo salen en su municipio.
 - **Facetas:** cada conteo se calcula sin aplicar el filtro de su propia faceta. Vienen todas las opciones, incluso con `count: 0`, y la UI decide si las oculta.
 - **`eligibleOnly` (`aplico=1`):** excluye solo las `no_cumple`. Sin perfil se ignora y `appliedProfile` sale en `false`.
 - **Orden `relevancia`:** primero el puntaje de texto, luego elegibilidad (`cumple` primero), luego la fecha de cierre más próxima.
@@ -377,7 +378,7 @@ interface OpportunityCard {
   type: OpportunityType;
   levels: EducationLevel[];
   municipality: { slug: string; name: string } | null;
-  modality: Modality;
+  modality: Modality;               // 'presencial' | 'hibrida' | 'remota' | 'no_especificada' (v0.1.2)
   compensation: { type: CompensationType; amountCop: number | null };
   durationMonths: { min: number; max: number } | null;
   deadline: { type: DeadlineType; date: string | null; daysLeft: number | null }; // date en ISO yyyy-mm-dd
@@ -448,7 +449,7 @@ Falta: más adaptadores de fuentes reales, el cron y la verificación de enlaces
 v2: `student_accounts`, `saved_opportunities`, `saved_searches`, `notifications`.
 RLS: el público lee `publicada` y `vencida` (la vencida solo por su URL directa); escriben solo el rol admin y el service role (ingesta).
 Además: `opportunities.review_notes` (observaciones de la ingesta), `organizations.normalized_name` (única; evita organizaciones repetidas), `opportunity_sources.position` (0 = fuente principal) e `ingestion_runs` (reporte de cada corrida).
-Migraciones (**ya aplicadas** al proyecto Supabase del PO con `npx supabase db push --remote`): `supabase/migrations/20261113000000_init.sql` (esquema y RLS) y `20261116000000_catalog.sql` (catálogo y fuentes; generado con `npm run db:catalog` desde `src/lib/catalog`, no se edita a mano). El modelo interno en TS está en `src/server/domain/types.ts` y el mapeo fila ↔ registro en `src/server/repo/supabase-mappers.ts`.
+Migraciones (**ya aplicadas** al proyecto Supabase del PO con `npx supabase db push --remote`): `supabase/migrations/20261113000000_init.sql` (esquema y RLS) `20261116000000_catalog.sql` (catálogo y fuentes; generado con `npm run db:catalog` desde `src/lib/catalog`, no se edita a mano) y `20261117000000_modalidad_desconocida_enum.sql` + `20261117000100_modalidad_desconocida_datos.sql` (valor `no_especificada` del enum `modality` y corrección de las que tenían presencial asumida). El modelo interno en TS está en `src/server/domain/types.ts` y el mapeo fila ↔ registro en `src/server/repo/supabase-mappers.ts`.
 **Repositorio Supabase implementado:** la app lee de Supabase con `USE_MOCKS=false` (§6). La ingesta escribe con `npm run ingest -- … --store=supabase` y la revisión se hace con `npm run admin` (ver `ingestion/README.md`). Los reportes de error los inserta el servidor con la clave secreta; no hay inserción pública.
 
 ---
@@ -489,6 +490,8 @@ Migraciones (**ya aplicadas** al proyecto Supabase del PO con `npx supabase db p
 
 | Fecha | Autor | Tipo | Descripción | Estado |
 |-------|-------|------|-------------|--------|
+| 2026-11-17 | Claude | Cambio de contrato | **Contrato v0.1.2 (no breaking):** `Modality` agrega `no_especificada` (etiqueta «Modalidad desconocida»). La ingesta ya no asume presencial cuando la fuente no lo dice. Filtrar por presencial/híbrida/remota excluye las desconocidas; hay opción de faceta propia. Datos del PO corregidos en Supabase | Cerrado |
+| 2026-11-17 | Claude | Solicitud → Codex | (Opcional) Estilo visual para «Modalidad desconocida» en tarjeta, fila y detalle (p. ej. tono neutro o ícono de pregunta), coherente con el principio de incertidumbre honesta. Hoy se muestra solo la etiqueta | Abierto |
 | 2026-11-16 | Claude | Entrega | **Conectores de ATS (Greenhouse y Lever)** en rama `claude/ats`: adaptadores con filtro Colombia + prácticas, extracto ≤ 300 caracteres y sin datos de reclutadores; registro `ingestion/sources/ats.ts` (Power Digital Marketing, Clara, Cobre, Wizeline, La Haus, Yuno); CLI `npm run ingest -- --ats`. Prueba real: Power Digital trae 7 prácticas (remotas); las demás hoy tienen 0. SmartRecruiters descartado por `robots.txt`; Ashby pendiente del PO. Normalizadores con términos en inglés (intern, trainee, student, hybrid, remote). Construido por Fable 5.2 y terminado por Opus 5.5, porque Fable alcanzó su límite de uso. 380 tests | Cerrado |
 | 2026-11-16 | Claude | Entrega | **Fase 1 (lado Claude): Supabase conectado** en rama `claude/fase-1`: esquema + catálogo aplicados al proyecto del PO, repositorio Supabase (clave secreta solo en servidor, caché corta), store de ingesta (`--store=supabase`), CLI de administración (`npm run admin -- revision|aprobar|retirar|vencer|publicadas`). Prueba real con datos de ejemplo y limpieza. 446 tests | Cerrado |
 | 2026-11-16 | Claude | Solicitud → Codex | **Panel de administración (UI)** sobre las acciones que se definirán en `src/server/actions/admin.ts` (Fase 1b, con Supabase Auth): lista de revisión, ver, aprobar, retirar. Mientras tanto el PO usa `npm run admin` | Abierto |

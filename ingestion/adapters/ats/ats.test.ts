@@ -451,10 +451,10 @@ describe("pipeline con fuentes ATS", () => {
     expect(first.items.map((i) => [i.municipalitySlug, i.modality])).toEqual([
       ["medellin", "hibrida"],
       [null, "remota"],
-      ["envigado", "presencial"],
+      ["envigado", "no_especificada"],
       ["medellin", "hibrida"],
       [null, "remota"],
-      [null, "presencial"],
+      [null, "no_especificada"],
     ]);
 
     const second = await runIngestion({ adapters: [greenhouse, lever], store, http, now: new Date("2026-11-17T15:00:00.000Z") });

@@ -32,7 +32,7 @@ Si prefieres no usar Excel, está `convocatorias.csv` (separado por comas, UTF-8
 | `tipo` | Tipo de oportunidad | Práctica profesional · Práctica empresarial · Pasantía · Contrato de aprendizaje · Judicatura |
 | `nivel` | Nivel de formación que piden (puede ser más de uno) | Universitario · Tecnólogo · Técnico profesional · Técnico laboral · Posgrado |
 | `municipio` | Dónde se hace | Medellín · Itagüí · Envigado · Remoto |
-| `modalidad` | Forma de trabajo | Presencial · Híbrida · Remota |
+| `modalidad` | Forma de trabajo (si la convocatoria no lo dice: «Desconocida» o vacío) | Presencial · Híbrida · Remota · Desconocida |
 | `pago` | Cuánto o qué tipo de pago | $1.750.000 · Apoyo de sostenimiento · 1 SMMLV · No remunerada |
 | `duracion` | Cuánto dura | 6 meses · 4 a 6 meses · un semestre |
 | `fecha_limite` | Último día para postularse | 30 de noviembre de 2026 · 30/11/2026 · Hasta agotar cupos |

@@ -272,7 +272,7 @@ describe("plantilla convocatorias.xlsx", () => {
     const column = (name: (typeof CSV_COLUMNS)[number]) => CSV_COLUMNS.indexOf(name) + 1;
     for (const row of [2, 300]) {
       expect(sheet.getCell(row, column("tipo")).dataValidation).toMatchObject({ type: "list", errorStyle: "warning" });
-      expect(sheet.getCell(row, column("modalidad")).dataValidation.formulae).toEqual(['"Presencial,Híbrida,Remota"']);
+      expect(sheet.getCell(row, column("modalidad")).dataValidation.formulae).toEqual(['"Presencial,Híbrida,Remota,Desconocida"']);
       // Sugerencias: nunca bloquean (nivel admite varios valores).
       expect(sheet.getCell(row, column("nivel")).dataValidation.showErrorMessage).toBeFalsy();
       expect(sheet.getCell(row, column("municipio")).dataValidation.formulae[0]).toMatch(/Medellín,.*Rionegro,Remoto/);

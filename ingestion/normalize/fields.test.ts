@@ -170,9 +170,30 @@ describe("normalizeModality", () => {
     expect(normalizeModality("3 días presencial y 2 remoto")).toMatchObject({ value: "hibrida", confidence: "media" });
   });
 
-  it("vacío o irreconocible → presencial con confianza baja", () => {
-    expect(normalizeModality(null)).toMatchObject({ value: "presencial", confidence: "baja" });
-    expect(normalizeModality("Por definir")).toMatchObject({ value: "presencial", confidence: "baja" });
+  it("vacío → no_especificada con confianza alta y sin nota (la fuente no lo dice)", () => {
+    expect(normalizeModality(null)).toEqual({ value: "no_especificada", confidence: "alta" });
+    expect(normalizeModality("")).toEqual({ value: "no_especificada", confidence: "alta" });
+    expect(normalizeModality("   ")).toEqual({ value: "no_especificada", confidence: "alta" });
+  });
+
+  it.each(["Desconocida", "Modalidad desconocida", "No especificada", "no especificado", "Por confirmar", "Por definir", "N/A"])(
+    "%j → no_especificada con confianza alta",
+    (text) => {
+      expect(normalizeModality(text)).toEqual({ value: "no_especificada", confidence: "alta" });
+    },
+  );
+
+  it("irreconocible → no_especificada con confianza media y nota (nunca se asume presencial)", () => {
+    expect(normalizeModality("Por definir con el jefe")).toEqual({
+      value: "no_especificada",
+      confidence: "media",
+      note: 'No se reconoció la modalidad ("Por definir con el jefe")',
+    });
+    expect(normalizeModality("Turnos rotativos").value).toBe("no_especificada");
+  });
+
+  it("una modalidad concreta gana aunque el texto mencione dudas", () => {
+    expect(normalizeModality("Remota (por confirmar)")).toEqual({ value: "remota", confidence: "alta" });
   });
 });
 

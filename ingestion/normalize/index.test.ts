@@ -222,6 +222,23 @@ describe("normalizeDraft", () => {
     expect(result.fieldConfidence.levels).toBe("media");
   });
 
+  it("sin modalidad en la fuente → desconocida, sin observación y publicable (no se asume presencial)", () => {
+    const unknown = normalizeDraft(draft({ modalityText: null }), options);
+    expect(unknown.candidate).toMatchObject({ modality: "no_especificada", municipalitySlug: "medellin", status: "publicada" });
+    expect(unknown.issues).toEqual([]);
+    expect(unknown.fieldConfidence.modality).toBe("alta");
+
+    // Texto que no se entiende: también desconocida, pero con observación → a revisión.
+    const odd = normalizeDraft(draft({ modalityText: "Turnos rotativos" }), options);
+    expect(odd.candidate).toMatchObject({ modality: "no_especificada", status: "en_revision" });
+    expect(odd.issues).toEqual(['Modalidad: No se reconoció la modalidad ("Turnos rotativos")']);
+
+    // Desconocida no es remota: sin municipio sigue faltando el municipio.
+    const noCity = normalizeDraft(draft({ municipalityText: null, modalityText: null }), options);
+    expect(noCity.candidate).toMatchObject({ modality: "no_especificada", municipalitySlug: null });
+    expect(noCity.issues.join(" ")).toContain("Municipio");
+  });
+
   it("una oferta remota no necesita municipio", () => {
     const remote = normalizeDraft(draft({ municipalityText: "Remoto", modalityText: null }), options);
     expect(remote.candidate).toMatchObject({ modality: "remota", municipalitySlug: null, status: "publicada" });

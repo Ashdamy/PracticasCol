@@ -42,6 +42,39 @@ describe("searchRecords (mocks)", () => {
     expect(r.items.every((i) => i.modality === "remota" || i.municipality?.slug === "barbosa")).toBe(true);
   });
 
+  it("modalidad desconocida: tiene su propia faceta y no entra en presencial, híbrida ni remota", () => {
+    const UNKNOWN_SLUG = "practica-cualquier-carrera-fundacion-semillas";
+    const all = searchRecords(MOCK_OPPORTUNITIES, { pageSize: 50 }, ctx());
+    expect(all.facets.modalities.map((f) => f.value)).toEqual(["presencial", "hibrida", "remota", "no_especificada"]);
+    const facet = all.facets.modalities.find((f) => f.value === "no_especificada")!;
+    expect(facet.label).toBe("Modalidad desconocida");
+    expect(facet.count).toBeGreaterThan(0);
+    // Sin filtro de modalidad aparecen todas.
+    expect(all.items.map((i) => i.slug)).toContain(UNKNOWN_SLUG);
+    expect(all.facets.modalities.reduce((sum, f) => sum + f.count, 0)).toBe(all.total);
+
+    for (const modality of ["presencial", "hibrida", "remota"] as const) {
+      const r = searchRecords(MOCK_OPPORTUNITIES, { modalities: [modality], pageSize: 50 }, ctx());
+      expect(r.total).toBeGreaterThan(0);
+      expect(r.items.every((i) => i.modality === modality)).toBe(true);
+    }
+    const known = searchRecords(MOCK_OPPORTUNITIES, { modalities: ["presencial", "hibrida", "remota"], pageSize: 50 }, ctx());
+    expect(known.items.some((i) => i.modality === "no_especificada")).toBe(false);
+    expect(known.total).toBe(all.total - facet.count);
+
+    const unknown = searchRecords(MOCK_OPPORTUNITIES, { modalities: ["no_especificada"], pageSize: 50 }, ctx());
+    expect(unknown.total).toBe(facet.count);
+    expect(unknown.items.map((i) => i.slug)).toContain(UNKNOWN_SLUG);
+    expect(unknown.items.every((i) => i.modality === "no_especificada")).toBe(true);
+  });
+
+  it("filtro de municipio: una desconocida solo sale en su municipio (no se trata como remota)", () => {
+    const other = searchRecords(MOCK_OPPORTUNITIES, { municipalities: ["barbosa"], pageSize: 50 }, ctx());
+    expect(other.items.some((i) => i.modality === "no_especificada")).toBe(false);
+    const own = searchRecords(MOCK_OPPORTUNITIES, { municipalities: ["copacabana"], pageSize: 50 }, ctx());
+    expect(own.items.some((i) => i.modality === "no_especificada")).toBe(true);
+  });
+
   it("facetas ignoran su propio filtro", () => {
     const r = searchRecords(MOCK_OPPORTUNITIES, { types: ["pasantia"] }, ctx());
     const practicas = r.facets.types.find((f) => f.value === "practica_profesional")!;

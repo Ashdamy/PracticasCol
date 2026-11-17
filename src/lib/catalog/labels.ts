@@ -35,6 +35,7 @@ export const MODALITY_LABELS: Record<Modality, string> = {
   presencial: "Presencial",
   hibrida: "Híbrida",
   remota: "Remota",
+  no_especificada: "Modalidad desconocida",
 };
 
 export const SECTOR_LABELS: Record<Sector, string> = {

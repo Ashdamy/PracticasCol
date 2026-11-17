@@ -40,7 +40,7 @@ Nada de `ingestion/` se importa desde `src/`: usa `node:fs`, `node:crypto` y `ex
 
 ### Confianza y regla de publicación
 
-Cada normalizador devuelve `Normalized<T>`: el valor, una confianza (`alta`, `media` o `baja`) y, si hizo alguna suposición, una nota para quien revisa. Nunca inventa un dato: si no entiende el texto, devuelve el valor vacío con confianza baja.
+Cada normalizador devuelve `Normalized<T>`: el valor, una confianza (`alta`, `media` o `baja`) y, si hizo alguna suposición, una nota para quien revisa. Nunca inventa un dato: si no entiende el texto, devuelve el valor vacío con confianza baja. Con la **modalidad** pasa lo mismo: si la fuente no la dice (celda vacía, «Desconocida», «Por confirmar»…) queda `no_especificada` («Modalidad desconocida») con confianza alta y sin observación, porque es un hecho y no una duda, así que no impide publicar; si trae un texto que no se reconoce, también queda `no_especificada`, pero con una observación. Nunca se asume presencial.
 
 `normalizeDraft(draft, { today, sourceId, autoPublish })` decide el estado:
 
@@ -158,7 +158,7 @@ La vía recomendada es **`ingestion/templates/convocatorias.xlsx`**: se abre igu
    | `tipo` | Práctica profesional · Pasantía · Contrato de aprendizaje · Judicatura | Como lo nombra la fuente |
    | `nivel` | Universitario · Tecnólogo · Técnico laboral · Técnico profesional · Posgrado | Se pueden poner varios separados por coma |
    | `municipio` | Medellín · Envigado · Remoto | Fuera del Valle de Aburrá y Rionegro queda como «fuera de cobertura» |
-   | `modalidad` | Presencial · Híbrida · Remota | |
+   | `modalidad` | Presencial · Híbrida · Remota · Desconocida | Vacío o «Desconocida» = modalidad desconocida (`no_especificada`); nunca se asume presencial |
    | `pago` | Apoyo de sostenimiento $1.750.000 · No remunerada · A convenir | Monto mensual en pesos |
    | `duracion` | 6 meses · 4 a 6 meses · 1 semestre | |
    | `fecha_limite` | 15/12/2026 · 15 de diciembre de 2026 · Hasta agotar cupos | Vacío = no publicada |

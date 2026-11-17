@@ -280,6 +280,7 @@ export const MOCK_OPPORTUNITIES: OpportunityRecord[] = [
     type: "practica_profesional",
     levels: ["tecnico_profesional", "tecnologo", "universitario"],
     municipalitySlug: "copacabana",
+    modality: "no_especificada",
     compensationType: "sin_remuneracion",
     durationMonthsMin: 4,
     durationMonthsMax: 6,

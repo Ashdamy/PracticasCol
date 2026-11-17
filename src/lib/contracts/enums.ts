@@ -25,7 +25,8 @@ export const EDUCATION_LEVELS = [
 export const EducationLevelSchema = z.enum(EDUCATION_LEVELS);
 export type EducationLevel = z.infer<typeof EducationLevelSchema>;
 
-export const MODALITIES = ["presencial", "hibrida", "remota"] as const;
+/** `no_especificada`: la fuente no dice la modalidad (se muestra «Modalidad desconocida»; nunca se asume presencial). */
+export const MODALITIES = ["presencial", "hibrida", "remota", "no_especificada"] as const;
 export const ModalitySchema = z.enum(MODALITIES);
 export type Modality = z.infer<typeof ModalitySchema>;
 

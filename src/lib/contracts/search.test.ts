@@ -32,6 +32,13 @@ describe("parseSearchParams / toSearchParams", () => {
     expect(parseSearchParams(sp)).toEqual(params);
   });
 
+  it("acepta la modalidad desconocida (modalidad=no_especificada)", () => {
+    const params = parseSearchParams(new URLSearchParams("modalidad=no_especificada,remota,xxx"));
+    expect(params.modalities).toEqual(["no_especificada", "remota"]);
+    expect(toSearchParams(params).get("modalidad")).toBe("no_especificada,remota");
+    expect(parseSearchParams(toSearchParams(params))).toEqual(params);
+  });
+
   it("URL vacía → defaults", () => {
     expect(toSearchParams(parseSearchParams(null)).toString()).toBe("");
   });
