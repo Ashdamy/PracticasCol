@@ -6,6 +6,23 @@ test.use({
   channel: "chrome",
 });
 
+test("portada: recientes siempre visibles, sin duplicados y acceso al catálogo ordenado", async ({ page }) => {
+  await page.goto("/");
+  const recent = page.getByRole("region", { name: "Recién publicadas", exact: true });
+  await expect(recent).toBeVisible();
+  await expect(recent.locator(".opportunity-card")).toHaveCount(6);
+  const links = await page.locator(".home-opportunities .opportunity-card h2 a").evaluateAll(
+    elements => elements.map(element => element.getAttribute("href")),
+  );
+  expect(new Set(links).size).toBe(links.length);
+  for (const width of [320, 390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await recent.getByRole("link", { name: "Ver todas las prácticas", exact: true }).click();
+  await expect(page).toHaveURL(/\/practicas\?orden=recientes$/);
+});
+
 test("portada: búsqueda, accesos por nivel e imagen responsive", async ({ page }) => {
   await page.goto("/");
   const hero = page.getByRole("region", { name: "Prácticas para lo que viene." });

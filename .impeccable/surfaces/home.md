@@ -17,3 +17,7 @@ FORM: Extensión del sistema existente solicitada por el PO: «okey me gusta per
 `public/images/students-first-step.webp`: ilustración original generada con la herramienta integrada imagegen; estudiantes ficticios colaborando. Transparente, 1600 × 594 px, aproximadamente 169 KiB. El prompt completo se conserva en `students-first-step.webp.json` (sidecar del comando embed-prompt para WebP). Fuente PNG conservada por la herramienta en `.codex/generated_images/01a1d65e-d2cb-7a33-9410-1f241d462bbe/exec-2b30009c-6262-445d-8c00-ca5b42f83eeb.png`.
 
 La imagen usa `next/image`, dimensiones intrínsecas, `sizes` responsive y `preload`. No añade JavaScript de animación ni dependencias. El componente es de servidor y reutiliza SearchBox.
+
+## Oportunidades bajo la apertura
+
+`getHomeData()` se consulta una sola vez dentro de Suspense. «Recién publicadas» conserva las seis ofertas de `recent` en su orden, aunque no tengan fecha de cierre. Tiene prioridad al eliminar duplicados por ID: el bloque de cierres muestra hasta cuatro ofertas de `closingSoon` que no estén en recientes y desaparece completo si no queda ninguna. La sección de recientes siempre está presente; si ambas listas están vacías, ofrece un estado vacío con enlace a `/practicas`. Reutiliza las filas, espaciado y temas existentes.
