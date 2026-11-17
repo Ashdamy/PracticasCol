@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
+import { notFound } from "next/navigation";
 import { mockCards, mockCardsWithProfile, mockDetail } from "@/lib/mocks";
 import { OpportunityListItem as OpportunityCard } from "@/components/opportunity-list";
 import { EligibilityBadge } from "@/components/eligibility-badge";
@@ -45,6 +46,7 @@ async function Gallery() {
   );
 }
 export default function Page() {
+  if (process.env.NODE_ENV === "production") notFound();
   return (
     <main id="main" className="content simple-page">
       <h1>Sistema de diseño</h1>

@@ -14,7 +14,7 @@ test("la publicación original abre aparte y conserva búsqueda, detalle y postu
     contentType: "text/html; charset=utf-8",
     body: "<h1>Publicación original de prueba</h1>",
   }));
-  for (const path of ["/practicas?q=textiles", "/design-system"]) {
+  for (const path of ["/practicas?q=textiles", "/"]) {
     await page.goto(path);
     const card = page.locator(".opportunity-card").filter({
       has: page.locator(`h2 a[href="/practicas/${slug}"]`),

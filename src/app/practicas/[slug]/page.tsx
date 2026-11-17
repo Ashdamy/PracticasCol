@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { EligibilityBadge } from "@/components/eligibility-badge";
 import { ResultsSkeleton } from "@/components/results-skeleton";
 import { OriginalPublicationLink } from "@/components/original-publication-link";
+import { ReportIssueDialog } from "@/components/report-issue-dialog";
 // React cache only deduplicates within the request; eligibility is never shared.
 const readOpportunity = cache(getOpportunity);
 
@@ -184,6 +185,7 @@ async function Detail({ params }: { params: Promise<{ slug: string }> }) {
               ))}
             </ul>
             <OriginalPublicationLink opportunity={o} />
+            <div><ReportIssueDialog opportunityId={o.id} /></div>
           </section>
         </article>
         <aside className="detail-sidebar">
