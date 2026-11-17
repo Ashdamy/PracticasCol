@@ -223,6 +223,7 @@ describe("otras filas", () => {
       name: "Org",
       sector: "mixto",
       logoUrl: null,
+      website: null,
     });
     expect(
       sourceRowToRecord({ id: "src-x", name: "X", url: "https://example.com", method: "api", last_run_at: "2026-11-16T05:00:00-05:00" }),

@@ -92,12 +92,35 @@ export interface AdminArgs {
   /** `--todos`: en `reportes`, incluye los ya resueltos. */
   all: boolean;
   help: boolean;
+  /** `--sitio <dominio>`: en `empresa`, el sitio web de la organización. */
+  site: string | null;
+  /** `--logo <url https>`: en `empresa`, un logo explícito. */
+  logo: string | null;
+  /** `--sin-logo`: en `empresa`, borra el sitio web y el logo. */
+  noLogo: boolean;
 }
 
 export function parseAdminArgs(argv: readonly string[]): AdminArgs {
-  const args: AdminArgs = { command: null, targets: [], force: false, all: false, help: false };
-  for (const arg of argv) {
-    if (arg === "--forzar") args.force = true;
+  const args: AdminArgs = {
+    command: null,
+    targets: [],
+    force: false,
+    all: false,
+    help: false,
+    site: null,
+    logo: null,
+    noLogo: false,
+  };
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    const [flag, inline] = arg.startsWith("--") && arg.includes("=") ? [arg.slice(0, arg.indexOf("=")), arg.slice(arg.indexOf("=") + 1)] : [arg, undefined];
+    if (flag === "--sitio" || flag === "--logo") {
+      const value = inline ?? argv[(i += 1)];
+      if (!value?.trim() || value.startsWith("--")) throw new Error(`Falta el valor de ${flag}`);
+      if (flag === "--sitio") args.site = value.trim();
+      else args.logo = value.trim();
+    } else if (arg === "--sin-logo") args.noLogo = true;
+    else if (arg === "--forzar") args.force = true;
     else if (arg === "--todos") args.all = true;
     else if (arg === "--help" || arg === "-h") args.help = true;
     else if (arg.startsWith("--")) throw new Error(`Opción desconocida: ${arg}`);

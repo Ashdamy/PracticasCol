@@ -5,6 +5,7 @@
 import type { OpportunityRecord, OrganizationRecord } from "@/server/domain/types";
 import { normalizeOrganization } from "./dedupe";
 import { slugify } from "./normalize";
+import { companyWebsiteFromUrls } from "./organization-website";
 import type { IngestionReport, OpportunityCandidate, RawItem } from "./types";
 
 export interface StoredOpportunity extends OpportunityRecord {
@@ -43,6 +44,7 @@ export interface MemoryStoreSeed {
 
 export interface MemoryStore extends IngestionStore {
   /** Solo para tests y el CLI. */
+  readonly organizations: readonly OrganizationRecord[];
   readonly runs: IngestionReport[];
   readonly rawItems: { raw: RawItem; contentHash: string }[];
 }
@@ -61,7 +63,7 @@ export function createMemoryStore(seed: MemoryStoreSeed = {}): MemoryStore {
   const runs: IngestionReport[] = [];
   let sequence = 0;
 
-  function organizationIdFor(name: string): string {
+  function organizationIdFor(name: string, urls: readonly (string | undefined)[]): string {
     const key = normalizeOrganization(name);
     const found = organizations.find((o) => normalizeOrganization(o.name) === key);
     if (found) return found.id;
@@ -70,6 +72,8 @@ export function createMemoryStore(seed: MemoryStoreSeed = {}): MemoryStore {
       name,
       sector: "privado",
       logoUrl: null,
+      // Solo al crearla: una organización que ya existe conserva su sitio.
+      website: companyWebsiteFromUrls(name, urls),
     };
     organizations.push(created);
     return created.id;
@@ -84,6 +88,7 @@ export function createMemoryStore(seed: MemoryStoreSeed = {}): MemoryStore {
   }
 
   return {
+    organizations,
     runs,
     rawItems,
 
@@ -105,7 +110,7 @@ export function createMemoryStore(seed: MemoryStoreSeed = {}): MemoryStore {
         ...fields,
         id,
         slug: previous?.slug ?? uniqueSlug(fields.slug, id),
-        organizationId: organizationIdFor(name),
+        organizationId: organizationIdFor(name, [fields.applyUrl, fields.sources[0]?.url]),
         organizationName: name,
         publishedAt: previous?.publishedAt ?? now,
         lastVerifiedAt: now,

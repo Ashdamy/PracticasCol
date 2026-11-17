@@ -24,7 +24,8 @@ adapter.fetch(ctx) ──► RawItem[] ──► adapter.parse(raw) ──► Op
 | `http.ts` | `createPoliteFetcher`: descarga respetuosa (robots.txt, pausa por host, reintento, timeout) |
 | `store.ts` | Interfaz `IngestionStore` y `createMemoryStore` |
 | `stores/supabase.ts` | `createSupabaseStore`: la misma interfaz sobre Supabase (organizaciones, slugs únicos, relaciones, crudos y corridas) |
-| `admin.ts` · `admin-rules.ts` · `admin-reports.ts` | CLI de administración (`npm run admin`), sus reglas puras y los reportes de los estudiantes |
+| `admin.ts` · `admin-rules.ts` · `admin-reports.ts` · `admin-organizations.ts` | CLI de administración (`npm run admin`), sus reglas puras, los reportes de los estudiantes y las empresas (sitio web y logo) |
+| `organization-website.ts` | `companyWebsiteFromUrls`: sitio web de una organización nueva a partir del enlace de la convocatoria, descartando portales de empleo, ATS, formularios y redes (`NON_COMPANY_DOMAINS`) |
 | `pipeline.ts` | `runIngestion`: orquesta todo y devuelve un reporte por fuente |
 | `jobs/expire.ts` | `expireOpportunities(records, today)`: qué publicadas deben pasar a `vencida` |
 | `adapters/tabular.ts` | Base común de las cargas en tabla: columnas de la plantilla, reconocimiento de encabezados y mapeo fila → borrador |
@@ -216,7 +217,7 @@ npm run ingest -- --xlsx data/mis-convocatorias.xlsx --store=supabase           
 - **Configuración:** lee `NEXT_PUBLIC_SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` de `.env.local` (con `process.loadEnvFile`; las variables que ya vengan del entorno mandan). La clave secreta omite RLS: no la compartas, no la subas al repo y no la pongas en variables `NEXT_PUBLIC_`. El CLI nunca la imprime. No depende de `USE_MOCKS`.
 - **Solo escribe con `--store=supabase` y sin `--dry-run`.** Con `--dry-run` lee de Supabase para deduplicar contra lo que ya existe, pero no guarda nada.
 - **Qué guarda** (`stores/supabase.ts`):
-  - La **organización** se busca por su nombre normalizado («Empresa X S.A.S.» = «empresa x») y se crea si no existe.
+  - La **organización** se busca por su nombre normalizado («Empresa X S.A.S.» = «empresa x») y se crea si no existe. Al **crearla**, si el enlace de postulación (o el de la fuente) está en un dominio propio —no en un portal de empleo, ATS, formulario o red social de `NON_COMPANY_DOMAINS`, ni en un `.edu.co`—, ese dominio se guarda como su sitio web (`website`), de donde sale el logo. Nunca se cambia el sitio de una organización que ya existe, ni se guarda para las «(confidencial)» o «(empresa cliente)».
   - El **slug** es único: si choca, se agrega un sufijo (`-2`, `-3`…). Al actualizar se conserva el slug original, para no romper enlaces.
   - Las **relaciones** (programas, áreas, instituciones y fuentes; la primera fuente es la principal).
   - Las **observaciones** de la normalización y la deduplicación en `review_notes`, para la cola de revisión.
@@ -249,11 +250,27 @@ Mientras no exista el panel web, lo cargado se revisa desde la terminal (contra 
 | `npm run admin -- publicadas` | Lista lo publicado |
 | `npm run admin -- reportes [--todos]` | Lista los reportes de los estudiantes («Reportar error») sin resolver, los más recientes primero. `--todos` incluye los resueltos. Solo lee |
 | `npm run admin -- resolver <id-reporte>...` | Marca reportes como resueltos (`resolved = true` y `resolved_at` = ahora) |
+| `npm run admin -- empresas` | Lista las empresas: nombre, sitio web, logo propio y si el sitio les mostrará logo (con el motivo). Solo lee |
+| `npm run admin -- empresa "<nombre>" --sitio <dominio>` | Guarda el sitio web de la empresa (se normaliza a dominio: sin `https://`, `www.` ni ruta). De ahí sale el logo |
+| `npm run admin -- empresa "<nombre>" --logo <url https>` | Guarda un logo propio, que gana sobre el del sitio web |
+| `npm run admin -- empresa "<nombre>" --sin-logo` | Borra el sitio web y el logo: la empresa queda con sus iniciales |
 
 - El **id** puede ser el id corto de las listas (primeros 8 caracteres), el id completo o el slug.
 - `aprobar` **se niega** si falta el título, la organización o un enlace de postulación `https`, o si la fecha límite ya pasó. `--forzar` salta el título, el `https` y la fecha; sin organización o sin enlace no se publica nunca (la base de datos tampoco lo permite).
 - El sitio usa una caché de unos 45 segundos: lo aprobado o retirado se refleja en menos de un minuto.
 - Código de salida: `0` bien, `1` si alguna convocatoria no se pudo procesar, `2` si faltan argumentos o configuración.
+- En `empresa`, el **nombre** puede ser el nombre completo o una parte única, sin importar tildes ni mayúsculas (`"grupo exito"`). Si coincide con varias, el comando las nombra y no cambia nada.
+
+### Logos de las empresas
+
+El sitio arma `organization.logoUrl` así (`src/server/domain/logos.ts`): el logo propio (`logo_url`) si existe; si no, el ícono de **Brandfetch** para el dominio de `website` (`https://cdn.brandfetch.io/domain/<dominio>/w/128/h/128/fallback/404/icon?c=<client ID>`), siempre que esté `NEXT_PUBLIC_BRANDFETCH_CLIENT_ID`; si no, nada y la interfaz muestra las iniciales. Las organizaciones «(confidencial)» y «(empresa cliente)» **nunca** llevan logo. Brandfetch exige *hotlinking*: la URL se incrusta tal cual en un `<img>`; no se descargan ni se guardan copias, ni se piden las imágenes desde scripts. Si Brandfetch no tiene el logo responde 404 y la interfaz vuelve a las iniciales.
+
+```
+npm run admin -- empresas
+npm run admin -- empresa "Bancolombia" --sitio bancolombia.com
+npm run admin -- empresa "grupo exito" --logo https://ejemplo.com/logo.png
+npm run admin -- empresa "Grupo UMA" --sin-logo
+```
 
 Flujo típico:
 

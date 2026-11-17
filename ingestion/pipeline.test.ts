@@ -72,6 +72,61 @@ function fakeAdapter(options: FakeAdapterOptions = {}): SourceAdapter {
   };
 }
 
+describe("createMemoryStore: sitio web de la organización", () => {
+  const base = {
+    slug: "practicante",
+    title: "Practicante",
+    type: "practica_profesional",
+    levels: ["universitario"],
+    municipalitySlug: "medellin",
+    modality: "presencial",
+    compensationType: "no_especificado",
+    compensationAmountCop: null,
+    durationMonthsMin: null,
+    durationMonthsMax: null,
+    deadlineType: "no_publicada",
+    deadlineDate: null,
+    startDate: null,
+    description: "",
+    openToAllPrograms: true,
+    programIds: [],
+    knowledgeAreaIds: [],
+    acceptsRelatedPrograms: false,
+    semesterMin: null,
+    semesterMax: null,
+    acceptsGraduates: null,
+    institutionIds: null,
+    otherRequirements: [],
+    status: "en_revision",
+  } as const;
+
+  it("lo toma del enlace propio al crearla y no lo cambia después", async () => {
+    const store = createMemoryStore();
+    const first = {
+      ...base,
+      levels: [...base.levels],
+      programIds: [],
+      knowledgeAreaIds: [],
+      otherRequirements: [],
+      organizationName: "Empresa Ficticia",
+      applyUrl: "https://www.empresaficticia.com.co/practicas",
+      sources: [{ sourceId: "src-x", url: "https://co.computrabajo.com/1" }],
+    };
+    await store.upsertOpportunity(first);
+    await store.upsertOpportunity({ ...first, slug: "otra", title: "Otra", applyUrl: "https://otrodominio.com.co/x" });
+    await store.upsertOpportunity({
+      ...first,
+      slug: "portal",
+      organizationName: "Otra Empresa",
+      applyUrl: "https://co.computrabajo.com/2",
+    });
+    expect(store.organizations.map((o) => [o.name, o.website])).toEqual([
+      ["Empresa Ficticia", "empresaficticia.com.co"],
+      ["Otra Empresa", null],
+    ]);
+  });
+});
+
 describe("runIngestion", () => {
   it("una fuente que falla no tumba a las demás", async () => {
     const store = createMemoryStore();
