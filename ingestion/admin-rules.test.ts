@@ -94,9 +94,11 @@ describe("parseAdminArgs", () => {
       command: "aprobar",
       targets: ["abc12345", "otro-slug"],
       force: true,
+      all: false,
       help: false,
     });
-    expect(parseAdminArgs([])).toEqual({ command: null, targets: [], force: false, help: false });
+    expect(parseAdminArgs([])).toEqual({ command: null, targets: [], force: false, all: false, help: false });
+    expect(parseAdminArgs(["reportes", "--todos"])).toMatchObject({ command: "reportes", all: true, targets: [] });
   });
 
   it("rechaza opciones desconocidas", () => {

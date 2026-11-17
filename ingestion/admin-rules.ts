@@ -89,13 +89,16 @@ export interface AdminArgs {
   command: string | null;
   targets: string[];
   force: boolean;
+  /** `--todos`: en `reportes`, incluye los ya resueltos. */
+  all: boolean;
   help: boolean;
 }
 
 export function parseAdminArgs(argv: readonly string[]): AdminArgs {
-  const args: AdminArgs = { command: null, targets: [], force: false, help: false };
+  const args: AdminArgs = { command: null, targets: [], force: false, all: false, help: false };
   for (const arg of argv) {
     if (arg === "--forzar") args.force = true;
+    else if (arg === "--todos") args.all = true;
     else if (arg === "--help" || arg === "-h") args.help = true;
     else if (arg.startsWith("--")) throw new Error(`Opción desconocida: ${arg}`);
     else if (args.command === null) args.command = arg.toLowerCase();

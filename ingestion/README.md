@@ -24,7 +24,7 @@ adapter.fetch(ctx) ──► RawItem[] ──► adapter.parse(raw) ──► Op
 | `http.ts` | `createPoliteFetcher`: descarga respetuosa (robots.txt, pausa por host, reintento, timeout) |
 | `store.ts` | Interfaz `IngestionStore` y `createMemoryStore` |
 | `stores/supabase.ts` | `createSupabaseStore`: la misma interfaz sobre Supabase (organizaciones, slugs únicos, relaciones, crudos y corridas) |
-| `admin.ts` · `admin-rules.ts` | CLI de administración (`npm run admin`) y sus reglas puras |
+| `admin.ts` · `admin-rules.ts` · `admin-reports.ts` | CLI de administración (`npm run admin`), sus reglas puras y los reportes de los estudiantes |
 | `pipeline.ts` | `runIngestion`: orquesta todo y devuelve un reporte por fuente |
 | `jobs/expire.ts` | `expireOpportunities(records, today)`: qué publicadas deben pasar a `vencida` |
 | `adapters/tabular.ts` | Base común de las cargas en tabla: columnas de la plantilla, reconocimiento de encabezados y mapeo fila → borrador |
@@ -247,6 +247,8 @@ Mientras no exista el panel web, lo cargado se revisa desde la terminal (contra 
 | `npm run admin -- retirar <id o slug>...` | Retira: deja de verse en el sitio (también por su URL) |
 | `npm run admin -- vencer` | Pasa a `vencida` las publicadas cuya fecha límite ya pasó (`expireOpportunities`) |
 | `npm run admin -- publicadas` | Lista lo publicado |
+| `npm run admin -- reportes [--todos]` | Lista los reportes de los estudiantes («Reportar error») sin resolver, los más recientes primero. `--todos` incluye los resueltos. Solo lee |
+| `npm run admin -- resolver <id-reporte>...` | Marca reportes como resueltos (`resolved = true` y `resolved_at` = ahora) |
 
 - El **id** puede ser el id corto de las listas (primeros 8 caracteres), el id completo o el slug.
 - `aprobar` **se niega** si falta el título, la organización o un enlace de postulación `https`, o si la fecha límite ya pasó. `--forzar` salta el título, el `https` y la fecha; sin organización o sin enlace no se publica nunca (la base de datos tampoco lo permite).
@@ -261,6 +263,25 @@ npm run admin -- revision
 npm run admin -- ver 0ecf4a19
 npm run admin -- aprobar 0ecf4a19 122e3125
 ```
+
+### Reportes de los estudiantes
+
+El botón «Reportar error» del sitio guarda cada reporte en `issue_reports`. `npm run admin -- reportes` los muestra así:
+
+```
+Reportes sin resolver: 1
+3f2a9c1d  2026-11-17 09:42  El enlace no funciona
+          Convocatoria: 0ecf4a19 «Practicante de datos» — Empresa Ficticia [Publicada]
+          Comentario: Al dar clic sale un error 404.
+          Sugerencia: Si confirmas que el enlace no funciona, retírala: npm run admin -- retirar 0ecf4a19
+
+Cuando atiendas uno, ciérralo con: npm run admin -- resolver <id-reporte>
+```
+
+- Cada reporte trae su id corto, la fecha y hora en Colombia, el motivo, la convocatoria (id corto, título, organización y estado) y el comentario en una línea, recortado a 200 caracteres.
+- **Sugerencia según el motivo:** para «Ya cerró» y «El enlace no funciona» deja listo el comando para retirarla; para «Parece sospechosa o fraudulenta» pide revisarla con prioridad y deja el mismo comando. Los demás motivos se revisan a mano (`ver <id>`). El CLI **nunca** retira nada por su cuenta.
+- `resolver` acepta el id corto o el completo del reporte; avisa si no existe, si coincide con varios o si ya estaba resuelto. Resolver un reporte no cambia la convocatoria.
+- `resolved_at` viene de la migración `20261117000200_reportes_resueltos.sql`.
 
 ## Conectores de ATS (Greenhouse y Lever)
 

@@ -6,13 +6,18 @@
  *   npm run admin -- retirar <id|slug>...
  *   npm run admin -- vencer                        pasa a «vencida» las publicadas cuya fecha límite ya pasó
  *   npm run admin -- publicadas                    lista lo publicado
+ *   npm run admin -- reportes [--todos]            lista los reportes de los estudiantes (con sugerencia de acción)
+ *   npm run admin -- resolver <id-reporte>...      marca reportes como resueltos
  * Nunca imprime claves.
  */
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { todayInBogota } from "@/lib/time";
+import { createSupabaseAdminClient, readSupabaseEnv } from "@/server/repo/supabase-shared";
+import { formatReportList, listIssueReports, markReportResolved, resolveReportId } from "./admin-reports";
 import { decideApproval, formatDetail, formatListItem, parseAdminArgs, resolveTarget, shortId } from "./admin-rules";
 import { expireOpportunities } from "./jobs/expire";
 import type { StoredOpportunity } from "./store";
-import { openSupabaseStore, type SupabaseStore } from "./stores/supabase";
+import { createSupabaseStore, loadLocalEnv, type SupabaseStore } from "./stores/supabase";
 
 const USAGE = `Uso: npm run admin -- <comando>
 
@@ -23,6 +28,9 @@ const USAGE = `Uso: npm run admin -- <comando>
   retirar <id|slug>...             Retira (deja de verse en el sitio)
   vencer                           Pasa a «vencida» las publicadas cuya fecha límite ya pasó
   publicadas                       Lista las convocatorias publicadas
+  reportes [--todos]               Lista los reportes de los estudiantes sin resolver (--todos incluye los resueltos),
+                                   con la convocatoria y una sugerencia de acción. No cambia nada
+  resolver <id-reporte>...         Marca reportes como resueltos (id corto o completo del reporte)
 
 El id puede ser el id corto de las listas (primeros 8 caracteres), el id completo o el slug.`;
 
@@ -55,9 +63,12 @@ async function main(): Promise<number> {
     return args.help ? 0 : 2;
   }
 
+  let client: SupabaseClient;
   let store: SupabaseStore;
   try {
-    store = openSupabaseStore();
+    loadLocalEnv();
+    client = createSupabaseAdminClient(readSupabaseEnv());
+    store = createSupabaseStore(client);
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     return 2;
@@ -132,6 +143,36 @@ async function main(): Promise<number> {
         }
         console.log(`Pasaron a vencida: ${ids.length}`);
         return 0;
+      }
+
+      case "reportes": {
+        const [reports, all] = await Promise.all([listIssueReports(client), store.listOpportunities()]);
+        console.log(formatReportList(reports, all, args.all));
+        return 0;
+      }
+
+      case "resolver": {
+        if (args.targets.length === 0) {
+          throw new UsageError("Indica al menos un id de reporte: npm run admin -- resolver <id-reporte>");
+        }
+        const reports = await listIssueReports(client);
+        let failed = 0;
+        for (const key of args.targets) {
+          try {
+            const report = resolveReportId(key, reports);
+            if (report.resolved) {
+              console.log(`El reporte ${shortId(report.id)} ya estaba resuelto`);
+              continue;
+            }
+            await markReportResolved(client, report.id);
+            report.resolved = true;
+            console.log(`Resuelto el reporte ${shortId(report.id)}`);
+          } catch (error) {
+            failed += 1;
+            console.error(error instanceof Error ? error.message : String(error));
+          }
+        }
+        return failed > 0 ? 1 : 0;
       }
 
       default:
