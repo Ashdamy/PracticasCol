@@ -14,6 +14,7 @@ import {
   type EligibilityProfile,
 } from "@/lib/eligibility";
 import { daysBetween, daysSince } from "@/lib/time";
+import { logoUrlFor } from "./logos";
 import type { OpportunityRecord, OrganizationRecord, SourceRecord } from "./types";
 
 export interface Lookups {
@@ -25,6 +26,8 @@ export interface MapContext extends Lookups {
   today: string;
   now: Date;
   profile: EligibilityProfile | null;
+  /** Client ID público de Brandfetch. Sin él solo salen los logos explícitos. */
+  brandfetchClientId?: string | null;
 }
 
 export function resolveProfile(profile: StudentProfile | null): EligibilityProfile | null {
@@ -85,7 +88,7 @@ export function toCard(r: OpportunityRecord, ctx: MapContext, eligibility = eval
     id: r.id,
     slug: r.slug,
     title: r.title,
-    organization: { name: org.name, logoUrl: org.logoUrl, sector: org.sector },
+    organization: { name: org.name, logoUrl: logoUrlFor(org, ctx.brandfetchClientId), sector: org.sector },
     type: r.type,
     levels: r.levels,
     municipality: muni ? { slug: muni.slug, name: muni.name } : null,

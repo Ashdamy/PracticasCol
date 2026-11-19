@@ -21,6 +21,7 @@ import { MUNICIPALITIES } from "@/lib/catalog/geo";
 import { EDUCATION_LEVEL_LABELS, MODALITY_LABELS, OPPORTUNITY_TYPE_LABELS } from "@/lib/catalog/labels";
 import { todayInBogota } from "@/lib/time";
 import { daysLeft, effectiveStatus, resolveProfile, toCard, toDetail, type MapContext } from "@/server/domain/mappers";
+import { readBrandfetchClientId } from "@/server/domain/logos";
 import { readProfileCookie } from "@/server/profile";
 import { getRepository } from "@/server/repo";
 import { searchRecords } from "@/server/search/engine";
@@ -37,6 +38,7 @@ async function buildContext(profile?: StudentProfile | null): Promise<MapContext
     now,
     today: todayInBogota(now),
     profile: resolveProfile(profile === undefined ? await readProfileCookie() : profile),
+    brandfetchClientId: readBrandfetchClientId(),
   };
 }
 

@@ -94,9 +94,34 @@ describe("parseAdminArgs", () => {
       command: "aprobar",
       targets: ["abc12345", "otro-slug"],
       force: true,
+      all: false,
       help: false,
+      site: null,
+      logo: null,
+      noLogo: false,
     });
-    expect(parseAdminArgs([])).toEqual({ command: null, targets: [], force: false, help: false });
+    expect(parseAdminArgs([])).toMatchObject({ command: null, targets: [], force: false, all: false, help: false });
+    expect(parseAdminArgs(["reportes", "--todos"])).toMatchObject({ command: "reportes", all: true, targets: [] });
+  });
+
+  it("lee las opciones de `empresa` (con valor aparte o con =)", () => {
+    expect(parseAdminArgs(["empresa", "Banco de Occidente", "--sitio", "bancodeoccidente.com.co"])).toMatchObject({
+      command: "empresa",
+      targets: ["Banco de Occidente"],
+      site: "bancodeoccidente.com.co",
+      logo: null,
+      noLogo: false,
+    });
+    expect(parseAdminArgs(["empresa", "Axity", "--logo=https://example.com/a.png"])).toMatchObject({
+      targets: ["Axity"],
+      logo: "https://example.com/a.png",
+    });
+    expect(parseAdminArgs(["empresa", "Axity", "--sin-logo"])).toMatchObject({ noLogo: true, site: null });
+  });
+
+  it("exige el valor de --sitio y --logo", () => {
+    expect(() => parseAdminArgs(["empresa", "Axity", "--sitio"])).toThrow("Falta el valor de --sitio");
+    expect(() => parseAdminArgs(["empresa", "Axity", "--logo", "--sin-logo"])).toThrow("Falta el valor de --logo");
   });
 
   it("rechaza opciones desconocidas", () => {

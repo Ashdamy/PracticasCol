@@ -99,7 +99,7 @@ describe("createSupabaseRepository", () => {
     const repo = createSupabaseRepository(client);
     expect(await repo.listSources()).toEqual([{ id: "src-a", name: "A", url: "https://example.com", method: "api", lastRunAt: null }]);
     expect(op(queries[0], "eq")).toEqual(["enabled", true]);
-    expect(await repo.listOrganizations()).toEqual([{ id: "o1", name: "Org", sector: "privado", logoUrl: null }]);
+    expect(await repo.listOrganizations()).toEqual([{ id: "o1", name: "Org", sector: "privado", logoUrl: null, website: null }]);
   });
 
   it("guarda un reporte y devuelve el registro", async () => {

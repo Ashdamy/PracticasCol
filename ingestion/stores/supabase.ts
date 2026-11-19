@@ -26,6 +26,7 @@ import {
   type DbResult,
 } from "@/server/repo/supabase-shared";
 import { dedupeHash, normalizeOrganization } from "../dedupe";
+import { companyWebsiteFromUrls } from "../organization-website";
 import type { IngestionStore, StoredOpportunity } from "../store";
 import type { IngestionReport } from "../types";
 
@@ -78,7 +79,8 @@ export interface SupabaseStore extends IngestionStore {
 const INCOMPLETE_NOTE = "Cerró sin haberse publicado y le faltaba la organización o el enlace: se retiró";
 
 export function createSupabaseStore(client: SupabaseClient): SupabaseStore {
-  async function organizationIdFor(name: string): Promise<string | null> {
+  /** `website` solo se guarda al crear la organización: nunca pisa el de una que ya existe. */
+  async function organizationIdFor(name: string, website: string | null): Promise<string | null> {
     const key = organizationKey(name);
     if (!key) return null;
     const find = async (): Promise<string | null> => {
@@ -93,7 +95,7 @@ export function createSupabaseStore(client: SupabaseClient): SupabaseStore {
     if (existing) return existing;
     const created: DbResult<unknown> = await client
       .from("organizations")
-      .insert({ name: name.trim(), normalized_name: key })
+      .insert({ name: name.trim(), normalized_name: key, ...(website ? { website } : {}) })
       .select("id")
       .single();
     // Otra corrida pudo crearla en el intermedio.
@@ -140,7 +142,10 @@ export function createSupabaseStore(client: SupabaseClient): SupabaseStore {
       const previous = options.existingId ? await readOne(options.existingId) : null;
       if (options.existingId && !previous) throw new Error(`No existe la oportunidad ${options.existingId}`);
 
-      const organizationId = await organizationIdFor(organizationName);
+      const organizationId = await organizationIdFor(
+        organizationName,
+        companyWebsiteFromUrls(organizationName, [fields.applyUrl, fields.sources[0]?.url]),
+      );
       let status = fields.status;
       const reviewNotes = [...(options.reviewNotes ?? [])];
       // Lo público exige organización y enlace (restricción `public_is_complete`).

@@ -212,10 +212,11 @@ export interface OrganizationRow {
   name: string;
   sector: Sector;
   logo_url: string | null;
+  website?: string | null;
 }
 
 export function organizationRowToRecord(row: OrganizationRow): OrganizationRecord {
-  return { id: row.id, name: row.name, sector: row.sector, logoUrl: row.logo_url };
+  return { id: row.id, name: row.name, sector: row.sector, logoUrl: row.logo_url, website: row.website ?? null };
 }
 
 export interface SourceRow {

@@ -18,6 +18,8 @@ export interface OrganizationRecord {
   name: string;
   sector: Sector;
   logoUrl: string | null;
+  /** Sitio web (dominio). De aquí sale el logo de Brandfetch cuando no hay `logoUrl` explícito. */
+  website?: string | null;
 }
 
 export interface SourceRecord {

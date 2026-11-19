@@ -72,7 +72,7 @@ export function createSupabaseRepository(client: SupabaseClient, options: Supaba
   const organizations = ttlCache(
     async () => {
       const rows = await fetchAll<OrganizationRow>(
-        (from, to) => client.from("organizations").select("id, name, sector, logo_url").order("id").range(from, to),
+        (from, to) => client.from("organizations").select("id, name, sector, logo_url, website").order("id").range(from, to),
         "leer las organizaciones",
       );
       return rows.map(organizationRowToRecord);

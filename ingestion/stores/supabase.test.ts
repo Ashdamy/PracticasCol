@@ -130,9 +130,38 @@ describe("createSupabaseStore.upsertOpportunity", () => {
     expect(result).toMatchObject({ id: OPP_ID, organizationName: "Empresa Ficticia S.A.S.", needsReview: true });
   });
 
-  it("reutiliza la organización existente y marca published_at al publicar", async () => {
+  it("al crear la organización guarda como sitio web el dominio propio del enlace", async () => {
+    const { store, written } = fakeDb();
+    await store.upsertOpportunity(candidate({ applyUrl: "https://www.empresaficticia.com.co/practicas/1" }), { now: NOW });
+    expect(written.find((w) => w.table === "organizations")?.payload).toEqual({
+      name: "Empresa Ficticia S.A.S.",
+      normalized_name: organizationKey("Empresa Ficticia S.A.S."),
+      website: "empresaficticia.com.co",
+    });
+  });
+
+  it("no guarda sitio web si los enlaces son de un portal de empleo o la empresa es confidencial", async () => {
+    const portal = fakeDb();
+    await portal.store.upsertOpportunity(
+      candidate({
+        applyUrl: "https://co.computrabajo.com/oferta/1",
+        sources: [{ sourceId: "src-manual-xlsx", url: "https://www.magneto365.com/oferta/1" }],
+      }),
+      { now: NOW },
+    );
+    expect(portal.written.find((w) => w.table === "organizations")?.payload).not.toHaveProperty("website");
+
+    const hidden = fakeDb();
+    await hidden.store.upsertOpportunity(
+      candidate({ organizationName: "Empresa de retail (confidencial)", applyUrl: "https://agencia.com.co/oferta/1" }),
+      { now: NOW },
+    );
+    expect(hidden.written.find((w) => w.table === "organizations")?.payload).not.toHaveProperty("website");
+  });
+
+  it("reutiliza la organización existente (sin tocar su sitio web) y marca published_at al publicar", async () => {
     const { store, written } = fakeDb({ organizations: { [organizationKey("Empresa Ficticia")]: "org-existente" } });
-    await store.upsertOpportunity(candidate({ status: "publicada" }), { now: NOW });
+    await store.upsertOpportunity(candidate({ status: "publicada", applyUrl: "https://otrodominio.com.co/x" }), { now: NOW });
     expect(written.some((w) => w.table === "organizations")).toBe(false);
     expect(written.find((w) => w.table === "opportunities")?.payload).toMatchObject({
       organization_id: "org-existente",
