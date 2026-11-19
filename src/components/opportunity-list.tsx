@@ -12,21 +12,12 @@ import {
 import { date, deadline, money } from "@/lib/format";
 import { EligibilityBadge } from "./eligibility-badge";
 import { OriginalPublicationLink } from "./original-publication-link";
+import { OrganizationLogo } from "./organization-logo";
 
 export function OpportunityListItem({ opportunity: o }: { opportunity: Card }) {
-  const initials = o.organization.name
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("");
   return (
     <article className="opportunity-card opportunity-row">
-      <div
-        className={`organization-initials tone-${o.type}`}
-        aria-hidden="true"
-      >
-        {initials}
-      </div>
+      <OrganizationLogo organization={o.organization} type={o.type} />
       <div className="opportunity-body">
         <div className="row-heading">
           <p className="organization">{o.organization.name}</p>

@@ -720,8 +720,10 @@ input[type="checkbox"] {
   grid-template-columns: minmax(0, 1fr) 350px;
   gap: 72px;
 }
-.detail article > .organization {
+.detail article > .organization-lockup {
   margin-top: 26px;
+}
+.detail .organization-lockup .organization {
   font-size: 16px;
 }
 .detail h1 {
@@ -1382,6 +1384,28 @@ h1 {
   font-family: var(--font-display);
   font-size: 16px;
   font-weight: 600;
+}
+.organization-logo-image {
+  background: #fff;
+  overflow: hidden;
+}
+.organization-logo-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 5px;
+  object-fit: contain;
+}
+.organization-lockup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.organization-lockup .organization {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 .tone-contrato_aprendizaje {
   background: #e6eee9;

@@ -19,6 +19,7 @@ import { date, deadline, money } from "@/lib/format";
 import { EligibilityBadge } from "./eligibility-badge";
 import { Badge } from "./ui/badge";
 import { OriginalPublicationLink } from "./original-publication-link";
+import { OrganizationLogo } from "./organization-logo";
 export function OpportunityCard({ opportunity: o }: { opportunity: Card }) {
   return (
     <article className="opportunity-card">
@@ -35,7 +36,10 @@ export function OpportunityCard({ opportunity: o }: { opportunity: Card }) {
           {deadline(o.deadline)}
         </span>
       </div>
-      <p className="organization">{o.organization.name}</p>
+      <div className="organization-lockup">
+        <OrganizationLogo organization={o.organization} type={o.type} />
+        <p className="organization">{o.organization.name}</p>
+      </div>
       <h2>
         <Link href={`/practicas/${o.slug}`}>
           {o.title}

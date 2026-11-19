@@ -25,3 +25,9 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 - https://recent.design/ — contraste de escala, identidad y composición; referencia pública inspeccionada.
 
 Las imágenes descargadas en .impeccable/reference son estudio y nunca se sirven desde public. Sin fotos, gráficos o claims inventados en el producto.
+
+## Logos de organizaciones · 2026-11-19
+
+Tarjeta, fila y detalle comparten `OrganizationLogo`: cuadrado reservado de 46 px (35 px en móvil), imagen completa con `object-fit: contain` y 5 px de aire. Fondo blanco también en oscuro para conservar los colores de la marca. El nombre sigue al lado; imagen decorativa con alt vacío. Carga directa diferida desde la URL del contrato, sin optimizador ni supresión de Referer. Si falta o falla, conserva las iniciales y los tonos actuales sin cambio de tamaño; una URL diferente vuelve a intentarse.
+
+Revisión: capturas de tarjeta/fila en 390 y 1440 px, claro/oscuro, y detalle móvil con respaldo. Sin desbordamiento en 320, 390 y 1440 px. Check (522 tests), 22 e2e y build verdes. Las pruebas de logos usan fixtures interceptadas, sin descargar ni almacenar marcas de Brandfetch. Resultado: listo para revisión del PO.
