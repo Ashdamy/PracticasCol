@@ -5,3 +5,5 @@ Con `npm run dev` en un terminal, ejecutar `npx playwright test e2e/catalog.spec
 Suite completa: `npx playwright test e2e --browser chromium --workers 1`. Incluye portada y ajustes de revisión: metadatos por oferta (también para bots), tema persistente o almacenamiento bloqueado, aviso de perfil, programas fuera de la institución y copy de semestre/cierre. `test-results/` está excluido de Git.
 
 Cubre filtros móviles y Escape, URL y chips, vacío, paginación, detalle y enlace oficial, perfil y borrado de cookie, oportunidad vencida, 404 y desbordamiento a 320, 390, 768, 1024 y 1440 px.
+
+`organization-logos.spec.ts` comprueba imágenes válidas, 404, URL nueva y null, Referer, fondo claro en ambos temas y ausencia de cambios de tamaño. Monta los componentes reales en una página interceptada solo por Playwright, con el CSS de la app y esbuild (incluido por `tsx`); las imágenes son respuestas locales interceptadas, sin peticiones a Brandfetch ni cambios en los mocks de Claude. Además recorre catálogo → detalle con los mocks originales sin logo.

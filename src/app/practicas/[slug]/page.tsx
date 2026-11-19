@@ -27,6 +27,7 @@ import { EligibilityBadge } from "@/components/eligibility-badge";
 import { ResultsSkeleton } from "@/components/results-skeleton";
 import { OriginalPublicationLink } from "@/components/original-publication-link";
 import { ReportIssueDialog } from "@/components/report-issue-dialog";
+import { OrganizationLogo } from "@/components/organization-logo";
 // React cache only deduplicates within the request; eligibility is never shared.
 const readOpportunity = cache(getOpportunity);
 
@@ -72,7 +73,10 @@ async function Detail({ params }: { params: Promise<{ slug: string }> }) {
       <div className="detail-grid">
         <article>
           <Badge>{OPPORTUNITY_TYPE_LABELS[o.type]}</Badge>
-          <p className="organization">{o.organization.name}</p>
+          <div className="organization-lockup">
+            <OrganizationLogo organization={o.organization} type={o.type} />
+            <p className="organization">{o.organization.name}</p>
+          </div>
           <h1>{o.title}</h1>
           <p className="detail-location">
             <MapPin size={18} />
