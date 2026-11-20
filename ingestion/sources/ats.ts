@@ -42,6 +42,8 @@ export const ATS_SOURCES: readonly AtsSource[] = [
   source("greenhouse", "clara", "Clara"),
   source("greenhouse", "cobre", "Cobre"),
   source("greenhouse", "wizeline", "Wizeline"),
+  // Oficina en Medellín; programas «Generación BTG» y «Futuros Talentos» (sondeo del PO con Perplexity, 2026-11-20).
+  source("greenhouse", "btgpactualla", "BTG Pactual"),
   source("lever", "lahaus", "La Haus"),
   source("lever", "yuno", "Yuno"),
 ];

@@ -400,6 +400,7 @@ describe("registro de fuentes ATS", () => {
       "greenhouse:clara",
       "greenhouse:cobre",
       "greenhouse:wizeline",
+      "greenhouse:btgpactualla",
       "lever:lahaus",
       "lever:yuno",
     ]);
