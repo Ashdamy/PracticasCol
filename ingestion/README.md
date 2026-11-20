@@ -245,6 +245,7 @@ Mientras no exista el panel web, lo cargado se revisa desde la terminal (contra 
 | `npm run admin -- revision` | Lista lo que espera revisión: id corto, título, organización, fuente y observaciones |
 | `npm run admin -- ver <id o slug>` | Muestra todos los datos de una convocatoria |
 | `npm run admin -- aprobar <id o slug>... [--forzar]` | Publica: estado `publicada`, fecha de publicación y de verificación = ahora, sin marca de revisión |
+| `npm run admin -- aprobar-lote <filtros> [--confirmar] [--forzar]` | Publica de una vez las que están en revisión y cumplen **todos** los filtros: `--fuente` (id o nombre, p. ej. `jooble`), `--empresa`, `--municipio` (nombre o slug), `--tipo`, `--titulo` y `--sin-observaciones`. **Sin `--confirmar` solo muestra la lista** y no cambia nada. Aplica las reglas de `aprobar` y **nunca** incluye posibles duplicados |
 | `npm run admin -- retirar <id o slug>...` | Retira: deja de verse en el sitio (también por su URL) |
 | `npm run admin -- vencer` | Pasa a `vencida` las publicadas cuya fecha límite ya pasó (`expireOpportunities`) |
 | `npm run admin -- publicadas` | Lista lo publicado |

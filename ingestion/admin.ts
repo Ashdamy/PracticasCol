@@ -3,6 +3,7 @@
  *   npm run admin -- revision                      lista lo que espera revisión
  *   npm run admin -- ver <id|slug>                 muestra una convocatoria completa
  *   npm run admin -- aprobar <id|slug>... [--forzar]
+ *   npm run admin -- aprobar-lote [--fuente … --empresa … --municipio … --tipo … --titulo … --sin-observaciones] [--confirmar]
  *   npm run admin -- retirar <id|slug>...
  *   npm run admin -- vencer                        pasa a «vencida» las publicadas cuya fecha límite ya pasó
  *   npm run admin -- publicadas                    lista lo publicado
@@ -26,7 +27,17 @@ import {
   updateOrganization,
 } from "./admin-organizations";
 import { formatReportList, listIssueReports, markReportResolved, resolveReportId } from "./admin-reports";
-import { decideApproval, formatDetail, formatListItem, parseAdminArgs, resolveTarget, shortId } from "./admin-rules";
+import {
+  decideApproval,
+  formatBatchSelection,
+  formatDetail,
+  formatListItem,
+  hasBatchFilter,
+  parseAdminArgs,
+  resolveTarget,
+  selectBatch,
+  shortId,
+} from "./admin-rules";
 import { expireOpportunities } from "./jobs/expire";
 import type { StoredOpportunity } from "./store";
 import { createSupabaseStore, loadLocalEnv, type SupabaseStore } from "./stores/supabase";
@@ -37,6 +48,17 @@ const USAGE = `Uso: npm run admin -- <comando>
   ver <id|slug>                    Muestra todos los datos de una convocatoria
   aprobar <id|slug>... [--forzar]  Publica. Se niega si falta el título, la organización o un enlace https, o si ya cerró.
                                    --forzar salta el título, el https y la fecha; sin organización o sin enlace nunca se publica
+  aprobar-lote <filtros> [--confirmar]
+                                   Publica de una vez las convocatorias en revisión que cumplen TODOS los filtros:
+                                     --fuente <texto>      fuente principal (p. ej. jooble)
+                                     --empresa <texto>     parte del nombre de la organización
+                                     --municipio <nombre>  p. ej. medellin, envigado, itagui
+                                     --tipo <tipo>         practica_profesional, practica_empresarial, pasantia,
+                                                           contrato_aprendizaje o judicatura
+                                     --titulo <texto>      parte del título
+                                     --sin-observaciones   solo las que no tienen ninguna observación
+                                   Sin --confirmar solo muestra la lista (no cambia nada). Aplica las mismas reglas de
+                                   «aprobar» (--forzar también) y nunca incluye posibles duplicados
   retirar <id|slug>...             Retira (deja de verse en el sitio)
   vencer                           Pasa a «vencida» las publicadas cuya fecha límite ya pasó
   publicadas                       Lista las convocatorias publicadas
@@ -130,6 +152,38 @@ async function main(): Promise<number> {
           }
         }
         if (failed === 0) console.log("El sitio las muestra en menos de un minuto (caché corta).");
+        return failed > 0 ? 1 : 0;
+      }
+
+      case "aprobar-lote": {
+        if (args.targets.length > 0) {
+          throw new UsageError("aprobar-lote no recibe ids: usa filtros (--fuente, --empresa, --municipio, --tipo, --titulo…)");
+        }
+        if (!hasBatchFilter(args.batch)) {
+          throw new UsageError("Indica al menos un filtro, por ejemplo: npm run admin -- aprobar-lote --fuente jooble --municipio envigado");
+        }
+        const [all, sourceNames] = await Promise.all([store.listOpportunities(), store.sourceNames()]);
+        const selection = selectBatch(all, args.batch, sourceNames, todayInBogota(), args.force);
+        if (!args.confirm) {
+          console.log(formatBatchSelection(selection, false));
+          return 0;
+        }
+        let failed = 0;
+        for (const target of selection.approve) {
+          try {
+            const now = new Date().toISOString();
+            await store.setStatus(target.id, { status: "publicada", needsReview: false, publishedAt: now, lastVerifiedAt: now });
+          } catch (error) {
+            failed += 1;
+            console.error(`No se pudo publicar ${shortId(target.id)}: ${error instanceof Error ? error.message : String(error)}`);
+          }
+        }
+        console.log(formatBatchSelection(selection, true));
+        console.log(
+          failed === 0
+            ? `\nListo: ${selection.approve.length} publicadas. El sitio las muestra en menos de un minuto (caché corta).`
+            : `\n${selection.approve.length - failed} publicadas y ${failed} con error (ver arriba).`,
+        );
         return failed > 0 ? 1 : 0;
       }
 
