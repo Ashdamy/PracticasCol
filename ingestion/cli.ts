@@ -5,6 +5,7 @@
  *   npm run ingest -- --archivo <ruta> …  (elige por la extensión: .xlsx o .csv)
  *   npm run ingest -- --ats [--dry-run] [--json]        (todas las fuentes de ingestion/sources/ats.ts; usa la red)
  *   npm run ingest -- --ats=<id> [--dry-run] [--json]   (una sola fuente ATS)
+ *   npm run ingest -- --jooble --dry-run [--max-consultas=N] [--json]  (solo prueba: Jooble no permite guardar sus ofertas)
  *   … --store=supabase                                  (guarda en Supabase; lee la configuración de .env.local)
  *
  * Por defecto (`--store=memoria`) trabaja contra un store en memoria sembrado con los datos de prueba, para
@@ -17,12 +18,13 @@ import { getMunicipality } from "@/lib/catalog/geo";
 import { MODALITY_LABELS, STATUS_LABELS } from "@/lib/catalog/labels";
 import { MOCK_OPPORTUNITIES, MOCK_ORGANIZATIONS } from "@/lib/mocks/data";
 import { createCsvAdapter } from "./adapters/csv";
+import { createJoobleAdapter, createJoobleTransport, DEFAULT_MAX_REQUESTS, JOOBLE_DAILY_LIMIT } from "./adapters/jooble";
 import { createXlsxAdapter } from "./adapters/xlsx";
 import { createPoliteFetcher } from "./http";
 import { runIngestion, type IngestionItemResult, type IngestionRun } from "./pipeline";
 import { ATS_SOURCES, createAtsAdapter, findAtsSource } from "./sources/ats";
 import { createMemoryStore, type IngestionStore } from "./store";
-import { openSupabaseStore, type SupabaseStore } from "./stores/supabase";
+import { loadLocalEnv, openSupabaseStore, type SupabaseStore } from "./stores/supabase";
 import type { IngestionLogger, IngestionReport, SourceAdapter } from "./types";
 
 type FileKind = "csv" | "xlsx";
@@ -33,6 +35,10 @@ interface CliArgs {
   file: { path: string; kind: FileKind } | null;
   /** `"todas"`, el id de una fuente ATS o `null` si no se pidió `--ats`. */
   ats: string | null;
+  /** `--jooble`: consulta la API de Jooble Colombia. */
+  jooble: boolean;
+  /** Tope de consultas a Jooble en esta corrida (`null` = el de por defecto). */
+  maxRequests: number | null;
   /** Dónde se guarda. Por defecto en memoria (no escribe en ninguna base de datos). */
   store: StoreKind;
   dryRun: boolean;
@@ -43,14 +49,25 @@ interface CliArgs {
 
 const ALL_ATS = "todas";
 
+/**
+ * Jooble respondió al PO (2026-11-20) que su API es para búsqueda en vivo y NO permite guardar sus ofertas
+ * en una base de datos propia. Por eso `--jooble` solo corre en prueba (`--dry-run`, store en memoria).
+ */
+export const JOOBLE_STORAGE_FORBIDDEN =
+  "Jooble no permite guardar sus ofertas en una base de datos propia (respuesta de Jooble, 2026-11-20): " +
+  "--jooble solo funciona con --dry-run y sin --store=supabase.";
+
 const USAGE = `Uso: npm run ingest -- --xlsx <ruta> [--store=supabase] [--dry-run] [--json] [--auto-publish]
      npm run ingest -- --ats[=<id>] [--store=supabase] [--dry-run] [--json]
+     npm run ingest -- --jooble --dry-run [--max-consultas=N] [--json]
 
   --xlsx <ruta>     Libro de Excel con convocatorias (plantilla: ingestion/templates/convocatorias.xlsx)
   --csv <ruta>      Archivo CSV con convocatorias (plantilla: ingestion/templates/convocatorias.csv)
   --archivo <ruta>  Cualquiera de los dos: se elige por la extensión (.xlsx o .csv)
   --ats             Consulta todas las fuentes ATS de ingestion/sources/ats.ts (usa la red)
   --ats=<id>        Consulta una sola fuente ATS: ${ATS_SOURCES.map((s) => s.token).join(", ")}
+  --jooble          Solo con --dry-run: prueba la API de Jooble Colombia sin guardar nada (Jooble no permite guardar sus ofertas)
+  --max-consultas=N Tope de consultas a Jooble en esta corrida (por defecto ${DEFAULT_MAX_REQUESTS}, máximo ${JOOBLE_DAILY_LIMIT})
   --store=supabase  Guarda en Supabase (configuración en .env.local). Por defecto: --store=memoria (no guarda)
   --dry-run         Solo valida y muestra el reporte; no guarda nada
   --json            Imprime el resultado en JSON
@@ -81,7 +98,17 @@ function resolveFile(option: FileOption, path: string | undefined): NonNullable<
 }
 
 export function parseArgs(argv: readonly string[]): CliArgs {
-  const args: CliArgs = { file: null, ats: null, store: "memoria", dryRun: false, json: false, autoPublish: false, help: false };
+  const args: CliArgs = {
+    file: null,
+    ats: null,
+    jooble: false,
+    maxRequests: null,
+    store: "memoria",
+    dryRun: false,
+    json: false,
+    autoPublish: false,
+    help: false,
+  };
   const setFile = (option: FileOption, path: string | undefined) => {
     if (args.file) throw new Error("Indica un solo archivo (--xlsx, --csv o --archivo)");
     args.file = resolveFile(option, path);
@@ -98,6 +125,13 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       const id = arg.slice("--ats=".length).trim();
       if (!id) throw new Error("Falta el id de la fuente después de --ats=");
       args.ats = id;
+    } else if (arg === "--jooble") args.jooble = true;
+    else if (arg.startsWith("--max-consultas=")) {
+      const value = Number(arg.slice("--max-consultas=".length));
+      if (!Number.isInteger(value) || value < 1 || value > JOOBLE_DAILY_LIMIT) {
+        throw new Error(`--max-consultas debe ser un número entero entre 1 y ${JOOBLE_DAILY_LIMIT}`);
+      }
+      args.maxRequests = value;
     } else if (arg.startsWith("--store=")) {
       const store = arg.slice("--store=".length).trim().toLowerCase();
       if (store === "supabase") args.store = "supabase";
@@ -109,8 +143,15 @@ export function parseArgs(argv: readonly string[]): CliArgs {
     else if (arg === "--help" || arg === "-h") args.help = true;
     else throw new Error(`Opción desconocida: ${arg}`);
   }
-  if (args.ats && args.file) throw new Error("Usa --ats o un archivo, no los dos a la vez");
-  if (args.ats && args.autoPublish) throw new Error("--auto-publish no aplica a --ats: las fuentes ATS siempre quedan en revisión");
+  const sourcesChosen = [args.file !== null, args.ats !== null, args.jooble].filter(Boolean).length;
+  if (sourcesChosen > 1) throw new Error("Usa una sola fuente a la vez: un archivo, --ats o --jooble");
+  if ((args.ats || args.jooble) && args.autoPublish) {
+    throw new Error("--auto-publish solo aplica a archivos: las fuentes automáticas siempre quedan en revisión");
+  }
+  if (args.maxRequests !== null && !args.jooble) throw new Error("--max-consultas solo aplica a --jooble");
+  if (args.jooble && (!args.dryRun || args.store !== "memoria")) {
+    throw new Error(JOOBLE_STORAGE_FORBIDDEN);
+  }
   return args;
 }
 
@@ -192,9 +233,24 @@ async function main(): Promise<number> {
     console.error(`${error instanceof Error ? error.message : String(error)}\n\n${USAGE}`);
     return 2;
   }
-  if (args.help || (!args.file && !args.ats)) {
+  if (args.help || (!args.file && !args.ats && !args.jooble)) {
     console.log(USAGE);
     return args.help ? 0 : 2;
+  }
+
+  if (args.jooble) {
+    loadLocalEnv();
+    const apiKey = process.env.JOOBLE_API_KEY?.trim();
+    if (!apiKey) {
+      console.error("Falta JOOBLE_API_KEY en .env.local (la clave de co.jooble.org, no la de jooble.org).");
+      return 2;
+    }
+    adapters = [
+      createJoobleAdapter({
+        transport: createJoobleTransport({ apiKey }),
+        maxRequests: args.maxRequests ?? DEFAULT_MAX_REQUESTS,
+      }),
+    ];
   }
 
   if (args.file) {
@@ -227,7 +283,7 @@ async function main(): Promise<number> {
     http: createPoliteFetcher(),
     now: new Date(),
     dryRun: args.dryRun,
-    log: args.ats ? log : undefined,
+    log: args.ats || args.jooble ? log : undefined,
   });
 
   if (args.json) console.log(JSON.stringify(run, null, 2));

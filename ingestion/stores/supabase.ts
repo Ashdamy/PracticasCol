@@ -76,7 +76,10 @@ export interface SupabaseStore extends IngestionStore {
   setStatus(id: string, patch: StatusPatch): Promise<void>;
 }
 
-const INCOMPLETE_NOTE = "Cerró sin haberse publicado y le faltaba la organización o el enlace: se retiró";
+/** URLs o ids por consulta en `markSeen` (la URL de PostgREST tiene un límite de tamaño). */
+const SEEN_CHUNK = 50;
+
+const INCOMPLETE_NOTE ="Cerró sin haberse publicado y le faltaba la organización o el enlace: se retiró";
 
 export function createSupabaseStore(client: SupabaseClient): SupabaseStore {
   /** `website` solo se guarda al crear la organización: nunca pisa el de una que ya existe. */
@@ -209,6 +212,32 @@ export function createSupabaseStore(client: SupabaseClient): SupabaseStore {
       if (((unwrap(updated, "actualizar la fecha de verificación") ?? []) as unknown[]).length === 0) {
         throw new Error(`No existe la oportunidad ${id}`);
       }
+    },
+
+    async markSeen(sourceId, urls, seenAt) {
+      const unique = [...new Set(urls)];
+      const ids = new Set<string>();
+      for (let i = 0; i < unique.length; i += SEEN_CHUNK) {
+        const result: DbResult<unknown> = await client
+          .from("opportunity_sources")
+          .select("opportunity_id")
+          .eq("source_id", sourceId)
+          .in("url", unique.slice(i, i + SEEN_CHUNK));
+        for (const row of (unwrap(result, "buscar las ofertas vistas") ?? []) as { opportunity_id: string }[]) {
+          ids.add(row.opportunity_id);
+        }
+      }
+      const all = [...ids];
+      for (let i = 0; i < all.length; i += SEEN_CHUNK) {
+        unwrap(
+          await client
+            .from("opportunities")
+            .update({ last_verified_at: seenAt })
+            .in("id", all.slice(i, i + SEEN_CHUNK)),
+          "anotar las ofertas vistas",
+        );
+      }
+      return all.length;
     },
 
     async hasRaw(sourceId, contentHash) {

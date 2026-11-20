@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   approvalProblems,
   decideApproval,
+  EMPTY_BATCH_FILTERS,
   formatListItem,
   parseAdminArgs,
   resolveTarget,
@@ -94,6 +95,9 @@ describe("parseAdminArgs", () => {
       command: "aprobar",
       targets: ["abc12345", "otro-slug"],
       force: true,
+      batch: EMPTY_BATCH_FILTERS,
+      confirm: false,
+      days: null,
       all: false,
       help: false,
       site: null,

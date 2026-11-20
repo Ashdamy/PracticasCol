@@ -245,8 +245,10 @@ Mientras no exista el panel web, lo cargado se revisa desde la terminal (contra 
 | `npm run admin -- revision` | Lista lo que espera revisión: id corto, título, organización, fuente y observaciones |
 | `npm run admin -- ver <id o slug>` | Muestra todos los datos de una convocatoria |
 | `npm run admin -- aprobar <id o slug>... [--forzar]` | Publica: estado `publicada`, fecha de publicación y de verificación = ahora, sin marca de revisión |
+| `npm run admin -- aprobar-lote <filtros> [--confirmar] [--forzar]` | Publica de una vez las que están en revisión y cumplen **todos** los filtros: `--fuente` (id o nombre, p. ej. `jooble`), `--empresa`, `--municipio` (nombre o slug), `--tipo`, `--titulo` y `--sin-observaciones`. **Sin `--confirmar` solo muestra la lista** y no cambia nada. Aplica las reglas de `aprobar` y **nunca** incluye posibles duplicados |
 | `npm run admin -- retirar <id o slug>...` | Retira: deja de verse en el sitio (también por su URL) |
 | `npm run admin -- vencer` | Pasa a `vencida` las publicadas cuya fecha límite ya pasó (`expireOpportunities`) |
+| `npm run admin -- desaparecidas [--dias N] [--confirmar]` | Cierra las ofertas que **solo** vienen de agregadores (Jooble) y llevan N días (7 por defecto) sin aparecer, contados desde la última corrida de esa fuente: las publicadas pasan a `vencida` y las que estaban en revisión, a `retirada`. **Sin `--confirmar` solo muestra la lista** |
 | `npm run admin -- publicadas` | Lista lo publicado |
 | `npm run admin -- reportes [--todos]` | Lista los reportes de los estudiantes («Reportar error») sin resolver, los más recientes primero. `--todos` incluye los resueltos. Solo lee |
 | `npm run admin -- resolver <id-reporte>...` | Marca reportes como resueltos (`resolved = true` y `resolved_at` = ahora) |
@@ -333,7 +335,36 @@ npm run ingest -- --ats=powerdigitalmarketing --dry-run
 ```
 Hace peticiones reales a las APIs. El log muestra, por fuente, cuántas ofertas tiene el tablero, cuántas son en Colombia y cuántas prácticas pasan el filtro. Que una fuente devuelva 0 prácticas puede ser normal.
 
+## Conector de Jooble (`adapters/jooble.ts`) — solo prueba, NO se usa
+
+> **Jooble no permite guardar sus ofertas.** Respuesta de su soporte al PO (2026-11-20): la API REST es para búsqueda en vivo, «not for creating a local mirror or persistent database of job vacancies», y exige mencionar a Jooble con un enlace. Por eso `--jooble` **solo corre con `--dry-run`** y sin `--store=supabase` (el CLI lo rechaza). El PO decidió no usar Jooble por ahora; el código queda por si más adelante se hace una sección «Más resultados en Jooble» en vivo.
+
+API REST oficial para sitios aliados ([documentación](https://jooblehelpcenter.freshdesk.com/en/support/solutions/articles/60001448238)). Fuente `src-api-jooble-co` («Jooble Colombia»).
+
+- **Clave:** `JOOBLE_API_KEY` en `.env.local`, pedida en `https://co.jooble.org/api/about`. Cada país tiene su clave; la de `jooble.org` solo trae EE. UU. y co.jooble.org responde 403.
+- **Límite:** 100 consultas al día por clave (se reinicia a medianoche UTC). Cada corrida tiene su propio tope (30 por defecto, `--max-consultas=N`, nunca más de 100). Un 429 detiene la corrida sin reintentar y conserva lo que ya llegó.
+- **Búsquedas:** `DEFAULT_JOOBLE_QUERIES`: 11 términos (practicante, pasante, aprendiz SENA, contrato de aprendizaje, trainee…) desde Medellín con radio de 40 km, 2 páginas de 50 cada uno (22 consultas como máximo).
+- **Filtro:** solo títulos de práctica (`isInternshipTitle`) y solo municipios del catálogo, o remotas en Colombia. Las repetidas entre búsquedas se cuentan una vez.
+- **Datos:** ficha propia de lista blanca (id, título, empresa, ubicación, pago, tipo de jornada, enlace, extracto ≤ 300 sin datos personales). No hay fecha de cierre: queda `no_publicada`. La modalidad solo se pasa si el título o el extracto la mencionan; si no, «Modalidad desconocida».
+- **Enlace:** `applyUrl` y `sourceUrl` son la página de la oferta en Jooble, como pide el programa de aliados.
+- **Clave segura:** va en la ruta de la URL, así que nunca se escribe en logs, errores ni ítems crudos (`redactKey`). El POST sale por `createJoobleTransport`, que solo habla con la API de Jooble (sin cookies, pausa ≥ 2 s y sin seguir redirecciones); `http.ts` sigue siendo solo GET. `robots.txt` de co.jooble.org (solo prohíbe `/employer/api`) se consulta antes de la primera petición.
+- **Revisión:** todo entra `en_revision`.
+
+```
+npm run ingest -- --jooble --dry-run                    # prueba real sin guardar (gasta consultas del día)
+```
+
+Primera prueba real (2026-11-20): 22 consultas, 1.100 ofertas recibidas, **303 prácticas** del Valle de Aburrá (227 de Medellín), 0 errores.
+
+**Careerjet no se conecta:** sus condiciones para aliados prohíben «construir o mantener una base de datos de empleos propia» con sus datos y exigen IP fija declarada (no sirven Vercel ni GitHub Actions). Solo cabría su widget JobBox en la UI, sin pasar por el buscador.
+
 ## Job de vencimiento
+
+### Ofertas de agregadores que dejan de aparecer (`jobs/retire-missing.ts`)
+
+Jooble no publica fecha de cierre: la señal de que una oferta cerró es que deja de aparecer. Cada corrida (sin `--dry-run`) llama a `store.markSeen(fuente, urls, ahora)`, que pone `lastVerifiedAt` en todo lo que la fuente volvió a mostrar, **aunque no haya cambiado**. `findMissingFromAggregators` (pura) devuelve las que llevan `maxDays` días sin aparecer respecto a la **última corrida** de su fuente, no respecto a hoy: si la ingesta deja de correr, no se cierra todo de golpe. Solo toca las ofertas cuyas fuentes son todas agregadores (`AGGREGATOR_SOURCE_IDS`). Se aplica con `npm run admin -- desaparecidas --confirmar`; en la Fase 3, desde el cron, después de cada corrida de Jooble.
+
+### Fecha límite vencida (`jobs/expire.ts`)
 
 `expireOpportunities(records, today)` es pura: recibe las oportunidades y la fecha de hoy en Colombia (`todayInBogota()`), y devuelve los ids de las `publicada` cuya fecha límite ya pasó. El día de cierre todavía cuenta como abierto. Quien la llame aplica el cambio de estado: hoy `npm run admin -- vencer`; en la Fase 3, el cron de GitHub Actions.
 

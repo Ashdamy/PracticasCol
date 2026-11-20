@@ -357,6 +357,38 @@ describe("runIngestion", () => {
   });
 });
 
+describe("ofertas que la fuente vuelve a mostrar", () => {
+  it("una oferta sin cambios queda con la fecha de verificación de la nueva corrida", async () => {
+    const store = createMemoryStore();
+    const adapter = fakeAdapter({ drafts: [draft()] });
+    await runIngestion({ adapters: [adapter], store, http, now: NOW });
+    const second = await runIngestion({ adapters: [adapter], store, http, now: LATER });
+    expect(second.reports[0].unchanged).toBe(1);
+    const [stored] = await store.listOpportunities();
+    expect(stored.lastVerifiedAt).toBe(LATER.toISOString());
+  });
+
+  it("en modo de prueba no anota nada", async () => {
+    const store = createMemoryStore();
+    const adapter = fakeAdapter({ drafts: [draft()] });
+    await runIngestion({ adapters: [adapter], store, http, now: NOW });
+    await runIngestion({ adapters: [adapter], store, http, now: LATER, dryRun: true });
+    const [stored] = await store.listOpportunities();
+    expect(stored.lastVerifiedAt).toBe(NOW.toISOString());
+  });
+
+  it("la que la fuente ya no muestra conserva su fecha anterior", async () => {
+    const store = createMemoryStore();
+    const kept = draft();
+    const gone = draft({ title: "Pasante de mercadeo", sourceUrl: "https://example.com/convocatorias/2", applyUrl: "https://example.com/postular/2" });
+    await runIngestion({ adapters: [fakeAdapter({ drafts: [kept, gone] })], store, http, now: NOW });
+    await runIngestion({ adapters: [fakeAdapter({ drafts: [kept] })], store, http, now: LATER });
+    const byTitle = new Map((await store.listOpportunities()).map((o) => [o.title, o.lastVerifiedAt]));
+    expect(byTitle.get("Practicante de Ingeniería Industrial")).toBe(LATER.toISOString());
+    expect(byTitle.get("Pasante de mercadeo")).toBe(NOW.toISOString());
+  });
+});
+
 describe("contentHash", () => {
   it("no depende del orden de las llaves", () => {
     expect(stableStringify({ b: 1, a: [2, { d: 3, c: undefined }] })).toBe('{"a":[2,{"d":3}],"b":1}');

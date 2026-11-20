@@ -30,6 +30,12 @@ export interface IngestionStore {
   upsertOpportunity(candidate: OpportunityCandidate, options?: UpsertOptions): Promise<StoredOpportunity>;
   /** Agrega la fuente (si no estaba) y actualiza `lastVerifiedAt`. */
   addSourceToOpportunity(id: string, sourceId: string, url: string, verifiedAt?: string): Promise<void>;
+  /**
+   * Anota que la fuente volvió a mostrar estas ofertas (se reconocen por la URL con que esa fuente las enlaza):
+   * actualiza `lastVerifiedAt`. Así se sabe cuáles siguen vivas aunque su contenido no haya cambiado.
+   * Devuelve cuántas oportunidades tocó.
+   */
+  markSeen(sourceId: string, urls: readonly string[], seenAt: string): Promise<number>;
   /** ¿Ya se había guardado este contenido para esta fuente? (lo usa `dryRun`, que no escribe). */
   hasRaw(sourceId: string, contentHash: string): Promise<boolean>;
   /** Guarda el ítem crudo. Devuelve `false` si ese hash ya existía para esa fuente (sin cambios). */
@@ -129,6 +135,18 @@ export function createMemoryStore(seed: MemoryStoreSeed = {}): MemoryStore {
         opportunity.sources = [...opportunity.sources, { sourceId, url }];
       }
       opportunity.lastVerifiedAt = verifiedAt ?? new Date().toISOString();
+    },
+
+    async markSeen(sourceId, urls, seenAt) {
+      const wanted = new Set(urls);
+      let touched = 0;
+      for (const opportunity of opportunities) {
+        if (opportunity.sources.some((s) => s.sourceId === sourceId && wanted.has(s.url))) {
+          opportunity.lastVerifiedAt = seenAt;
+          touched += 1;
+        }
+      }
+      return touched;
     },
 
     async hasRaw(sourceId, contentHash) {

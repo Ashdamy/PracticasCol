@@ -2,8 +2,10 @@
  * Reglas puras del CLI de administración (`admin.ts`): a quién se refiere un argumento, cuándo se puede
  * aprobar una convocatoria y cómo se muestra. Sin red ni base de datos, para poder probarlas.
  */
-import { getMunicipality } from "@/lib/catalog/geo";
+import { OPPORTUNITY_TYPES, type OpportunityType } from "@/lib/contracts";
+import { getMunicipality, MUNICIPALITIES } from "@/lib/catalog/geo";
 import { MODALITY_LABELS, OPPORTUNITY_TYPE_LABELS, STATUS_LABELS } from "@/lib/catalog/labels";
+import { clean } from "./normalize/text";
 import type { StoredOpportunity } from "./store";
 
 export const SHORT_ID_LENGTH = 8;
@@ -85,10 +87,147 @@ export function decideApproval(opportunity: Approvable, today: string, force: bo
   return { approve: stoppers.length === 0, problems };
 }
 
+// ---------------------------------------------------------------------------
+// Aprobación en bloque
+// ---------------------------------------------------------------------------
+
+/** Filtros de `aprobar-lote`. Se combinan con «y»; los textos ignoran tildes y mayúsculas. */
+export interface BatchFilters {
+  /** Parte del id o del nombre de la fuente principal (`jooble`, `src-api-jooble-co`). */
+  source: string | null;
+  /** Parte del nombre de la organización. */
+  organization: string | null;
+  /** Slug del municipio (`medellin`) o su nombre. */
+  municipality: string | null;
+  type: OpportunityType | null;
+  /** Parte del título. */
+  title: string | null;
+  /** Solo las que no tienen ninguna observación de la ingesta. */
+  withoutNotes: boolean;
+}
+
+export const EMPTY_BATCH_FILTERS: BatchFilters = {
+  source: null,
+  organization: null,
+  municipality: null,
+  type: null,
+  title: null,
+  withoutNotes: false,
+};
+
+/** Las observaciones de la ingesta que marcan un posible duplicado empiezan así (ver `pipeline.ts`). */
+const PROBABLE_DUPLICATE_RE = /^posible duplicado/i;
+
+export function isProbableDuplicate(opportunity: Pick<StoredOpportunity, "reviewNotes">): boolean {
+  return opportunity.reviewNotes.some((note) => PROBABLE_DUPLICATE_RE.test(note.trim()));
+}
+
+export function hasBatchFilter(filters: BatchFilters): boolean {
+  return (
+    filters.source !== null ||
+    filters.organization !== null ||
+    filters.municipality !== null ||
+    filters.type !== null ||
+    filters.title !== null ||
+    filters.withoutNotes
+  );
+}
+
+function includesClean(haystack: string, needle: string): boolean {
+  return clean(haystack).includes(clean(needle));
+}
+
+/** Slug del municipio a partir del slug o del nombre («Itagüí», «itagui»). `null` si no existe. */
+export function resolveMunicipalitySlug(text: string): string | null {
+  const wanted = clean(text);
+  return MUNICIPALITIES.find((m) => m.slug === wanted.replace(/\s+/g, "-") || clean(m.name) === wanted)?.slug ?? null;
+}
+
+export function matchesBatchFilters(
+  opportunity: StoredOpportunity,
+  filters: BatchFilters,
+  sourceNames: ReadonlyMap<string, string>,
+): boolean {
+  if (filters.source !== null) {
+    const sourceId = opportunity.sources[0]?.sourceId ?? "";
+    const name = sourceNames.get(sourceId) ?? "";
+    if (!includesClean(sourceId, filters.source) && !includesClean(name, filters.source)) return false;
+  }
+  if (filters.organization !== null && !includesClean(opportunity.organizationName, filters.organization)) return false;
+  if (filters.municipality !== null && opportunity.municipalitySlug !== filters.municipality) return false;
+  if (filters.type !== null && opportunity.type !== filters.type) return false;
+  if (filters.title !== null && !includesClean(opportunity.title, filters.title)) return false;
+  if (filters.withoutNotes && opportunity.reviewNotes.length > 0) return false;
+  return true;
+}
+
+export interface BatchSkip {
+  opportunity: StoredOpportunity;
+  reasons: string[];
+}
+
+export interface BatchSelection {
+  approve: StoredOpportunity[];
+  /** Coinciden con los filtros pero no se pueden aprobar en bloque. */
+  skipped: BatchSkip[];
+}
+
+/**
+ * Qué publicaría `aprobar-lote`: las convocatorias en revisión que pasan los filtros y las mismas reglas de
+ * `aprobar` (`decideApproval`). Los posibles duplicados nunca entran: se revisan una por una.
+ */
+export function selectBatch(
+  all: readonly StoredOpportunity[],
+  filters: BatchFilters,
+  sourceNames: ReadonlyMap<string, string>,
+  today: string,
+  force: boolean,
+): BatchSelection {
+  const selection: BatchSelection = { approve: [], skipped: [] };
+  const candidates = all
+    .filter((o) => o.status === "en_revision" && matchesBatchFilters(o, filters, sourceNames))
+    .sort((a, b) => a.title.localeCompare(b.title, "es"));
+  for (const opportunity of candidates) {
+    const reasons: string[] = [];
+    if (isProbableDuplicate(opportunity)) reasons.push("posible duplicado: revísala con «ver» y apruébala sola");
+    const decision = decideApproval(opportunity, today, force);
+    if (!decision.approve) reasons.push(...decision.problems.map((p) => p.message));
+    if (reasons.length > 0) selection.skipped.push({ opportunity, reasons });
+    else selection.approve.push(opportunity);
+  }
+  return selection;
+}
+
+/** Resumen de lo que se aprobaría (o se aprobó) y de lo que se saltó. */
+export function formatBatchSelection(selection: BatchSelection, confirmed: boolean): string {
+  const lines: string[] = [];
+  lines.push(`${confirmed ? "Se publican" : "Se publicarían"}: ${selection.approve.length}`);
+  for (const o of selection.approve) {
+    const place = getMunicipality(o.municipalitySlug)?.name ?? "sin municipio";
+    lines.push(`  ${shortId(o.id)}  ${o.title} — ${o.organizationName} (${place} · ${OPPORTUNITY_TYPE_LABELS[o.type]})`);
+  }
+  if (selection.skipped.length > 0) {
+    lines.push("", `No entran en el lote: ${selection.skipped.length}`);
+    for (const { opportunity, reasons } of selection.skipped) {
+      lines.push(`  ${shortId(opportunity.id)}  ${opportunity.title || "(sin título)"}: ${reasons.join("; ")}`);
+    }
+  }
+  if (!confirmed && selection.approve.length > 0) {
+    lines.push("", "No se cambió nada. Si la lista está bien, repite el mismo comando con --confirmar.");
+  }
+  return lines.join("\n");
+}
+
 export interface AdminArgs {
   command: string | null;
   targets: string[];
   force: boolean;
+  /** Filtros de `aprobar-lote`. */
+  batch: BatchFilters;
+  /** `--confirmar`: en `aprobar-lote` y `desaparecidas`, aplica los cambios (sin él solo muestra la lista). */
+  confirm: boolean;
+  /** `--dias N`: en `desaparecidas`, días sin aparecer para darla por cerrada (`null` = el de por defecto). */
+  days: number | null;
   /** `--todos`: en `reportes`, incluye los ya resueltos. */
   all: boolean;
   help: boolean;
@@ -100,11 +239,31 @@ export interface AdminArgs {
   noLogo: boolean;
 }
 
+const BATCH_VALUE_FLAGS: readonly string[] = ["--fuente", "--empresa", "--municipio", "--tipo", "--titulo"];
+
+function setBatchFilter(filters: BatchFilters, flag: string, value: string): void {
+  if (flag === "--fuente") filters.source = value;
+  else if (flag === "--empresa") filters.organization = value;
+  else if (flag === "--titulo") filters.title = value;
+  else if (flag === "--municipio") {
+    const slug = resolveMunicipalitySlug(value);
+    if (!slug) throw new Error(`No hay un municipio «${value}» en el catálogo: ${MUNICIPALITIES.map((m) => m.slug).join(", ")}`);
+    filters.municipality = slug;
+  } else if (flag === "--tipo") {
+    const type = OPPORTUNITY_TYPES.find((t) => t === value.trim().toLowerCase());
+    if (!type) throw new Error(`Tipo desconocido «${value}»: ${OPPORTUNITY_TYPES.join(", ")}`);
+    filters.type = type;
+  }
+}
+
 export function parseAdminArgs(argv: readonly string[]): AdminArgs {
   const args: AdminArgs = {
     command: null,
     targets: [],
     force: false,
+    batch: { ...EMPTY_BATCH_FILTERS },
+    confirm: false,
+    days: null,
     all: false,
     help: false,
     site: null,
@@ -119,7 +278,17 @@ export function parseAdminArgs(argv: readonly string[]): AdminArgs {
       if (!value?.trim() || value.startsWith("--")) throw new Error(`Falta el valor de ${flag}`);
       if (flag === "--sitio") args.site = value.trim();
       else args.logo = value.trim();
-    } else if (arg === "--sin-logo") args.noLogo = true;
+    } else if (BATCH_VALUE_FLAGS.includes(flag)) {
+      const value = (inline ?? argv[(i += 1)])?.trim();
+      if (!value || value.startsWith("--")) throw new Error(`Falta el valor de ${flag}`);
+      setBatchFilter(args.batch, flag, value);
+    } else if (flag === "--dias") {
+      const value = Number((inline ?? argv[(i += 1)])?.trim());
+      if (!Number.isInteger(value) || value < 1 || value > 90) throw new Error("--dias debe ser un número entero entre 1 y 90");
+      args.days = value;
+    } else if (arg === "--sin-observaciones") args.batch.withoutNotes = true;
+    else if (arg === "--confirmar") args.confirm = true;
+    else if (arg === "--sin-logo") args.noLogo = true;
     else if (arg === "--forzar") args.force = true;
     else if (arg === "--todos") args.all = true;
     else if (arg === "--help" || arg === "-h") args.help = true;

@@ -288,3 +288,27 @@ describe("rowToStored", () => {
     expect(stored).toMatchObject({ organizationName: "", needsReview: true, reviewNotes: ["Organización: falta la organización"] });
   });
 });
+
+describe("markSeen", () => {
+  it("busca las ofertas por fuente y URL, y les pone la fecha de verificación", async () => {
+    const { client, queries } = createFakeSupabase((query) =>
+      query.table === "opportunity_sources" ? { data: [{ opportunity_id: "a" }, { opportunity_id: "b" }, { opportunity_id: "a" }] } : { data: [] },
+    );
+    const touched = await createSupabaseStore(client).markSeen("src-api-jooble-co", ["u1", "u2", "u1"], NOW);
+    expect(touched).toBe(2);
+    const lookup = queries.find((q) => q.table === "opportunity_sources");
+    expect(op(lookup!, "eq")).toEqual(["source_id", "src-api-jooble-co"]);
+    expect(op(lookup!, "in")).toEqual(["url", ["u1", "u2"]]);
+    const update = queries.find((q) => q.table === "opportunities");
+    expect(op(update!, "update")).toEqual([{ last_verified_at: NOW }]);
+    expect(op(update!, "in")).toEqual(["id", ["a", "b"]]);
+  });
+
+  it("parte las listas largas en tandas de 50", async () => {
+    const { client, queries } = createFakeSupabase(() => ({ data: [] }));
+    const urls = Array.from({ length: 120 }, (_, i) => `u${i}`);
+    await createSupabaseStore(client).markSeen("src-api-jooble-co", urls, NOW);
+    expect(queries.filter((q) => q.table === "opportunity_sources")).toHaveLength(3);
+    expect(queries.filter((q) => q.table === "opportunities")).toHaveLength(0);
+  });
+});

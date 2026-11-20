@@ -280,6 +280,14 @@ export async function runIngestion(options: RunIngestionOptions): Promise<Ingest
       }
     }
 
+    // Lo que la fuente volvió a mostrar sigue vivo, aunque no haya cambiado: se anota la fecha de verificación.
+    // Con eso `jobs/retire-missing.ts` sabe qué ofertas de agregadores dejaron de aparecer.
+    if (!dryRun && rawItems.length > 0) {
+      await store.markSeen(adapter.id, rawItems.map((raw) => raw.url), nowIso).catch((error: unknown) => {
+        report.warnings.push(`No se pudo anotar la fecha de verificación: ${errorMessage(error)}`);
+      });
+    }
+
     report.durationMs = Date.now() - startedAt;
     log.info(`[${adapter.id}] ${report.fetched} ítems, ${report.created} nuevas, ${report.needsReview} en revisión`);
     if (!dryRun) {
