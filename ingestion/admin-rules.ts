@@ -224,8 +224,10 @@ export interface AdminArgs {
   force: boolean;
   /** Filtros de `aprobar-lote`. */
   batch: BatchFilters;
-  /** `--confirmar`: en `aprobar-lote`, publica de verdad (sin él solo muestra la lista). */
+  /** `--confirmar`: en `aprobar-lote` y `desaparecidas`, aplica los cambios (sin él solo muestra la lista). */
   confirm: boolean;
+  /** `--dias N`: en `desaparecidas`, días sin aparecer para darla por cerrada (`null` = el de por defecto). */
+  days: number | null;
   /** `--todos`: en `reportes`, incluye los ya resueltos. */
   all: boolean;
   help: boolean;
@@ -261,6 +263,7 @@ export function parseAdminArgs(argv: readonly string[]): AdminArgs {
     force: false,
     batch: { ...EMPTY_BATCH_FILTERS },
     confirm: false,
+    days: null,
     all: false,
     help: false,
     site: null,
@@ -279,6 +282,10 @@ export function parseAdminArgs(argv: readonly string[]): AdminArgs {
       const value = (inline ?? argv[(i += 1)])?.trim();
       if (!value || value.startsWith("--")) throw new Error(`Falta el valor de ${flag}`);
       setBatchFilter(args.batch, flag, value);
+    } else if (flag === "--dias") {
+      const value = Number((inline ?? argv[(i += 1)])?.trim());
+      if (!Number.isInteger(value) || value < 1 || value > 90) throw new Error("--dias debe ser un número entero entre 1 y 90");
+      args.days = value;
     } else if (arg === "--sin-observaciones") args.batch.withoutNotes = true;
     else if (arg === "--confirmar") args.confirm = true;
     else if (arg === "--sin-logo") args.noLogo = true;

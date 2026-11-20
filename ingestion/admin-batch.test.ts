@@ -173,6 +173,13 @@ describe("parseAdminArgs (aprobar-lote)", () => {
     expect(() => parseAdminArgs(["aprobar-lote", "--fuente"])).toThrow(/Falta el valor/);
   });
 
+  it("lee --dias para «desaparecidas» y rechaza valores raros", () => {
+    expect(parseAdminArgs(["desaparecidas", "--dias", "10", "--confirmar"])).toMatchObject({ command: "desaparecidas", days: 10, confirm: true });
+    expect(parseAdminArgs(["desaparecidas", "--dias=3"]).days).toBe(3);
+    expect(() => parseAdminArgs(["desaparecidas", "--dias", "0"])).toThrow(/--dias/);
+    expect(() => parseAdminArgs(["desaparecidas", "--dias", "abc"])).toThrow(/--dias/);
+  });
+
   it("entiende el nombre del municipio o su slug", () => {
     expect(resolveMunicipalitySlug("La Estrella")).toBe("la-estrella");
     expect(resolveMunicipalitySlug("la-estrella")).toBe("la-estrella");

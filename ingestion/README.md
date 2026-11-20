@@ -248,6 +248,7 @@ Mientras no exista el panel web, lo cargado se revisa desde la terminal (contra 
 | `npm run admin -- aprobar-lote <filtros> [--confirmar] [--forzar]` | Publica de una vez las que están en revisión y cumplen **todos** los filtros: `--fuente` (id o nombre, p. ej. `jooble`), `--empresa`, `--municipio` (nombre o slug), `--tipo`, `--titulo` y `--sin-observaciones`. **Sin `--confirmar` solo muestra la lista** y no cambia nada. Aplica las reglas de `aprobar` y **nunca** incluye posibles duplicados |
 | `npm run admin -- retirar <id o slug>...` | Retira: deja de verse en el sitio (también por su URL) |
 | `npm run admin -- vencer` | Pasa a `vencida` las publicadas cuya fecha límite ya pasó (`expireOpportunities`) |
+| `npm run admin -- desaparecidas [--dias N] [--confirmar]` | Cierra las ofertas que **solo** vienen de agregadores (Jooble) y llevan N días (7 por defecto) sin aparecer, contados desde la última corrida de esa fuente: las publicadas pasan a `vencida` y las que estaban en revisión, a `retirada`. **Sin `--confirmar` solo muestra la lista** |
 | `npm run admin -- publicadas` | Lista lo publicado |
 | `npm run admin -- reportes [--todos]` | Lista los reportes de los estudiantes («Reportar error») sin resolver, los más recientes primero. `--todos` incluye los resueltos. Solo lee |
 | `npm run admin -- resolver <id-reporte>...` | Marca reportes como resueltos (`resolved = true` y `resolved_at` = ahora) |
@@ -358,6 +359,12 @@ Primera prueba real (2026-11-20): 22 consultas, 1.100 ofertas recibidas, **303 p
 **Careerjet no se conecta:** sus condiciones para aliados prohíben «construir o mantener una base de datos de empleos propia» con sus datos y exigen IP fija declarada (no sirven Vercel ni GitHub Actions). Solo cabría su widget JobBox en la UI, sin pasar por el buscador.
 
 ## Job de vencimiento
+
+### Ofertas de agregadores que dejan de aparecer (`jobs/retire-missing.ts`)
+
+Jooble no publica fecha de cierre: la señal de que una oferta cerró es que deja de aparecer. Cada corrida (sin `--dry-run`) llama a `store.markSeen(fuente, urls, ahora)`, que pone `lastVerifiedAt` en todo lo que la fuente volvió a mostrar, **aunque no haya cambiado**. `findMissingFromAggregators` (pura) devuelve las que llevan `maxDays` días sin aparecer respecto a la **última corrida** de su fuente, no respecto a hoy: si la ingesta deja de correr, no se cierra todo de golpe. Solo toca las ofertas cuyas fuentes son todas agregadores (`AGGREGATOR_SOURCE_IDS`). Se aplica con `npm run admin -- desaparecidas --confirmar`; en la Fase 3, desde el cron, después de cada corrida de Jooble.
+
+### Fecha límite vencida (`jobs/expire.ts`)
 
 `expireOpportunities(records, today)` es pura: recibe las oportunidades y la fecha de hoy en Colombia (`todayInBogota()`), y devuelve los ids de las `publicada` cuya fecha límite ya pasó. El día de cierre todavía cuenta como abierto. Quien la llame aplica el cambio de estado: hoy `npm run admin -- vencer`; en la Fase 3, el cron de GitHub Actions.
 

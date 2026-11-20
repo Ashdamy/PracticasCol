@@ -97,6 +97,7 @@ describe("parseAdminArgs", () => {
       force: true,
       batch: EMPTY_BATCH_FILTERS,
       confirm: false,
+      days: null,
       all: false,
       help: false,
       site: null,
