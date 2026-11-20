@@ -2,7 +2,7 @@
  * Objetos del CONTRATO listos para prototipar UI sin servidor (p. ej. en un client component o en tests de UI).
  * En las páginas reales usa "@/server/queries" (con USE_MOCKS=true ya devuelven estos mismos datos).
  */
-import type { OpportunityCard, OpportunityDetail, SearchResult, StudentProfile } from "@/lib/contracts";
+import type { OpportunityCard, OpportunityDetail, PublishOpportunityInput, SearchResult, StudentProfile } from "@/lib/contracts";
 import { resolveProfile, toCard, toDetail, type MapContext } from "@/server/domain/mappers";
 import { searchRecords } from "@/server/search/engine";
 import { todayInBogota } from "@/lib/time";
@@ -38,3 +38,37 @@ export const mockCardsWithProfile: OpportunityCard[] = published.map((r) => toCa
 /** Detalle de la primera oportunidad, evaluado con `mockProfile`. */
 export const mockDetail: OpportunityDetail = toDetail(published[0], ctx(mockProfile));
 export const mockSearchResult: SearchResult = searchRecords(MOCK_OPPORTUNITIES, {}, ctx(null));
+
+/**
+ * Formulario «Publica tu práctica» lleno y válido (organización ficticia), para prototipar y para tests.
+ * `startedAt` debe ser el momento en que se mostró el formulario: en una prueba real usa `Date.now() - 10_000`.
+ */
+export const mockPublishInput: PublishOpportunityInput = {
+  title: "Practicante de Ingeniería Industrial - Mejora continua",
+  organizationName: "Empresa Ficticia de Prueba S.A.S.",
+  type: "practica_profesional",
+  levels: ["universitario"],
+  programIds: ["prog-ing-industrial", "prog-ing-produccion"],
+  acceptsRelatedPrograms: true,
+  municipality: "itagui",
+  modality: "hibrida",
+  compensationType: "apoyo_sostenimiento",
+  compensationAmountCop: 1_750_000,
+  durationMonths: 6,
+  deadlineType: "hasta_agotar_cupos",
+  deadlineDate: null,
+  startDate: null,
+  semesterMin: 8,
+  semesterMax: 10,
+  description:
+    "Apoyarás al equipo de mejora continua de la planta en el levantamiento de procesos, indicadores y proyectos de reducción de desperdicios.",
+  requirements: ["Excel intermedio", "Disponibilidad de tiempo completo"],
+  applyUrl: "https://example.com/empleos/practicante-industrial",
+  contactName: "Persona de Prueba",
+  contactEmail: "talento@example.com",
+  contactRole: "Analista de talento humano",
+  acceptsTerms: true,
+  acceptsPrivacy: true,
+  trap: "",
+  startedAt: 0,
+};

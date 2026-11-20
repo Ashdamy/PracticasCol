@@ -28,6 +28,7 @@ import {
   updateOrganization,
 } from "./admin-organizations";
 import { formatReportList, listIssueReports, markReportResolved, resolveReportId } from "./admin-reports";
+import { formatSubmissionContacts, submissionContacts } from "./admin-submissions";
 import {
   decideApproval,
   formatBatchSelection,
@@ -42,7 +43,8 @@ import {
 import { expireOpportunities } from "./jobs/expire";
 import { DEFAULT_MISSING_DAYS, findMissingFromAggregators } from "./jobs/retire-missing";
 import type { StoredOpportunity } from "./store";
-import { createSupabaseStore, loadLocalEnv, type SupabaseStore } from "./stores/supabase";
+import { loadLocalEnv } from "./local-env";
+import { createSupabaseStore, type SupabaseStore } from "./stores/supabase";
 
 const USAGE = `Uso: npm run admin -- <comando>
 
@@ -130,7 +132,11 @@ async function main(): Promise<number> {
       case "ver": {
         needTargets(args.targets, "ver");
         const [all, sourceNames] = await Promise.all([store.listOpportunities(), store.sourceNames()]);
-        for (const key of args.targets) console.log(`${formatDetail(resolveTarget(key, all), sourceNames)}\n`);
+        for (const key of args.targets) {
+          const target = resolveTarget(key, all);
+          const contact = formatSubmissionContacts(await submissionContacts(client, target.id));
+          console.log(`${formatDetail(target, sourceNames)}${contact ? `\n${contact}` : ""}\n`);
+        }
         return 0;
       }
 

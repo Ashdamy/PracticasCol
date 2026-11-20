@@ -5,7 +5,8 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { OpportunityRecord } from "@/server/domain/types";
-import type { Repository } from "./index";
+import { createSupabaseStore } from "../../../ingestion/stores/supabase";
+import type { DedupeTarget, Repository } from "./index";
 import {
   OPPORTUNITY_SELECT,
   PUBLIC_STATUSES,
@@ -127,6 +128,51 @@ export function createSupabaseRepository(client: SupabaseClient, options: Supaba
         .select("id, opportunity_id, reason, comment, created_at")
         .single();
       return issueReportRowToRecord(unwrap(result, "guardar el reporte") as IssueReportRow);
+    },
+
+    async listDedupeTargets() {
+      const rows = await fetchAll<{ id: string; title: string; deadline_date: string | null; organizations: { name: string } | null }>(
+        (from, to) => client.from("opportunities").select("id, title, deadline_date, organizations(name)").order("id").range(from, to),
+        "leer las convocatorias para buscar duplicados",
+      );
+      return rows.map(
+        (r): DedupeTarget => ({ id: r.id, title: r.title, organizationName: r.organizations?.name ?? "", deadlineDate: r.deadline_date }),
+      );
+    },
+
+    async countRecentPublications({ ipHash, email, ipSince, emailSince }) {
+      const count = async (column: string, value: string, since: string, what: string): Promise<number> => {
+        const result = (await client
+          .from("opportunity_submissions")
+          .select("id", { count: "exact", head: true })
+          .eq(column, value)
+          .gte("created_at", since)) as DbResult<unknown> & { count?: number | null };
+        unwrap(result, what);
+        return result.count ?? 0;
+      };
+      const [byIp, byEmail] = await Promise.all([
+        count("ip_hash", ipHash, ipSince, "contar los envíos por IP"),
+        count("contact_email", email.trim().toLowerCase(), emailSince, "contar los envíos por correo"),
+      ]);
+      return { byIp, byEmail };
+    },
+
+    async savePublication(candidate, reviewNotes, contact) {
+      // El mismo camino de guardado que la ingesta: organización, slug único, relaciones y hash de duplicados.
+      const stored = await createSupabaseStore(client).upsertOpportunity(candidate, { reviewNotes, needsReview: true });
+      const result: DbResult<unknown> = await client.from("opportunity_submissions").insert({
+        opportunity_id: stored.id,
+        contact_name: contact.name,
+        contact_email: contact.email.trim().toLowerCase(),
+        contact_role: contact.role,
+        ip_hash: contact.ipHash,
+      });
+      if (result.error) {
+        // Sin contacto no se puede verificar: se deshace la convocatoria para no dejarla huérfana en la cola.
+        await client.from("opportunities").delete().eq("id", stored.id);
+        unwrap(result, "guardar el contacto de la publicación");
+      }
+      return { id: stored.id };
     },
   };
 }

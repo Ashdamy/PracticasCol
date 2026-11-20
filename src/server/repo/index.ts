@@ -4,6 +4,7 @@
  * - Supabase (`supabase.ts`): cuando `USE_MOCKS=false` y están `NEXT_PUBLIC_SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`.
  */
 import type { IssueReportRecord, OpportunityRecord, OrganizationRecord, SourceRecord } from "@/server/domain/types";
+import type { OpportunityCandidate } from "../../../ingestion/types";
 import { memoryRepository } from "./memory";
 import { createSupabaseRepository } from "./supabase";
 import { createSupabaseAdminClient, readSupabaseEnv, type SupabaseEnv } from "./supabase-shared";
@@ -16,6 +17,38 @@ export interface Repository {
   listOrganizations(): Promise<OrganizationRecord[]>;
   listSources(): Promise<SourceRecord[]>;
   insertIssueReport(report: Omit<IssueReportRecord, "id" | "createdAt">): Promise<IssueReportRecord>;
+
+  // ---- Formulario «Publica tu práctica» ----
+  /** Todas las convocatorias (cualquier estado), con lo justo para buscar duplicados. */
+  listDedupeTargets(): Promise<DedupeTarget[]>;
+  /** Envíos del formulario desde esa IP (hash) y con ese correo, desde las fechas dadas. */
+  countRecentPublications(query: RecentPublicationsQuery): Promise<{ byIp: number; byEmail: number }>;
+  /** Guarda la convocatoria en revisión y, aparte, el contacto privado de quien la envió. */
+  savePublication(candidate: OpportunityCandidate, reviewNotes: string[], contact: PublicationContact): Promise<{ id: string }>;
+}
+
+export interface DedupeTarget {
+  id: string;
+  title: string;
+  organizationName: string;
+  deadlineDate: string | null;
+}
+
+export interface RecentPublicationsQuery {
+  ipHash: string;
+  email: string;
+  /** ISO datetime. */
+  ipSince: string;
+  /** ISO datetime. */
+  emailSince: string;
+}
+
+/** Datos privados de quien publica: nunca se muestran en el sitio. */
+export interface PublicationContact {
+  name: string;
+  email: string;
+  role: string;
+  ipHash: string;
 }
 
 export function isMockMode(): boolean {

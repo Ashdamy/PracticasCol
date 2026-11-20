@@ -24,7 +24,8 @@ import { createPoliteFetcher } from "./http";
 import { runIngestion, type IngestionItemResult, type IngestionRun } from "./pipeline";
 import { ATS_SOURCES, createAtsAdapter, findAtsSource } from "./sources/ats";
 import { createMemoryStore, type IngestionStore } from "./store";
-import { loadLocalEnv, openSupabaseStore, type SupabaseStore } from "./stores/supabase";
+import { loadLocalEnv, openSupabaseStore } from "./local-env";
+import type { SupabaseStore } from "./stores/supabase";
 import type { IngestionLogger, IngestionReport, SourceAdapter } from "./types";
 
 type FileKind = "csv" | "xlsx";

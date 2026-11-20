@@ -4,8 +4,10 @@
  *
  * Las escrituras de una oportunidad son varias peticiones (fila + relaciones) y no una transacción:
  * si algo falla a mitad, el ítem queda como error, su crudo no se guarda y la siguiente corrida lo reintenta.
+ *
+ * Sin acceso al disco: el sitio también lo usa (formulario «Publica tu práctica»). Leer `.env.local` es cosa de
+ * los comandos de terminal (`ingestion/local-env.ts`).
  */
-import { existsSync } from "node:fs";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { OpportunityStatus, SourceMethod } from "@/lib/contracts";
 import {
@@ -17,14 +19,7 @@ import {
   toIso,
   type OpportunityRow,
 } from "@/server/repo/supabase-mappers";
-import {
-  UNIQUE_VIOLATION,
-  createSupabaseAdminClient,
-  fetchAll,
-  readSupabaseEnv,
-  unwrap,
-  type DbResult,
-} from "@/server/repo/supabase-shared";
+import { UNIQUE_VIOLATION, fetchAll, unwrap, type DbResult } from "@/server/repo/supabase-shared";
 import { dedupeHash, normalizeOrganization } from "../dedupe";
 import { companyWebsiteFromUrls } from "../organization-website";
 import type { IngestionStore, StoredOpportunity } from "../store";
@@ -326,15 +321,4 @@ export function createSupabaseStore(client: SupabaseClient): SupabaseStore {
       }
     },
   };
-}
-
-/** Carga `.env.local` (si existe) sin pisar las variables que ya vengan del entorno. */
-export function loadLocalEnv(path = ".env.local"): void {
-  if (existsSync(path)) process.loadEnvFile(path);
-}
-
-/** Abre el store con la configuración de `.env.local`. Lanza un error claro si falta algo. */
-export function openSupabaseStore(): SupabaseStore {
-  loadLocalEnv();
-  return createSupabaseStore(createSupabaseAdminClient(readSupabaseEnv()));
 }
