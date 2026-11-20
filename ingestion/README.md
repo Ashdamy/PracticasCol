@@ -335,7 +335,9 @@ npm run ingest -- --ats=powerdigitalmarketing --dry-run
 ```
 Hace peticiones reales a las APIs. El log muestra, por fuente, cuántas ofertas tiene el tablero, cuántas son en Colombia y cuántas prácticas pasan el filtro. Que una fuente devuelva 0 prácticas puede ser normal.
 
-## Conector de Jooble (`adapters/jooble.ts`)
+## Conector de Jooble (`adapters/jooble.ts`) — solo prueba, NO se usa
+
+> **Jooble no permite guardar sus ofertas.** Respuesta de su soporte al PO (2026-11-20): la API REST es para búsqueda en vivo, «not for creating a local mirror or persistent database of job vacancies», y exige mencionar a Jooble con un enlace. Por eso `--jooble` **solo corre con `--dry-run`** y sin `--store=supabase` (el CLI lo rechaza). El PO decidió no usar Jooble por ahora; el código queda por si más adelante se hace una sección «Más resultados en Jooble» en vivo.
 
 API REST oficial para sitios aliados ([documentación](https://jooblehelpcenter.freshdesk.com/en/support/solutions/articles/60001448238)). Fuente `src-api-jooble-co` («Jooble Colombia»).
 
@@ -350,8 +352,6 @@ API REST oficial para sitios aliados ([documentación](https://jooblehelpcenter.
 
 ```
 npm run ingest -- --jooble --dry-run                    # prueba real sin guardar (gasta consultas del día)
-npm run ingest -- --jooble --store=supabase --dry-run   # compara contra lo que ya hay en Supabase, sin guardar
-npm run ingest -- --jooble --store=supabase             # guarda en Supabase (en revisión)
 ```
 
 Primera prueba real (2026-11-20): 22 consultas, 1.100 ofertas recibidas, **303 prácticas** del Valle de Aburrá (227 de Medellín), 0 errores.

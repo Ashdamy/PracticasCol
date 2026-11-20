@@ -8,7 +8,7 @@
 | # | Vía | Estado | Qué cubre | Riesgo legal | Qué hace falta |
 |---|-----|--------|-----------|--------------|----------------|
 | A | **APIs públicas de sistemas de selección (ATS)** de las empresas | ✅ Disponible ya | Ofertas publicadas en Greenhouse, Lever, Ashby, SmartRecruiters y Recruitee, y en SuccessFactors cuando la empresa expone su feed XML | Bajo: son APIs documentadas, sin clave, pensadas para publicar empleos | Saber **qué empresas del Valle de Aburrá** usan cada ATS (lista curada) y construir los adaptadores |
-| B | **API de agregadores para socios** (Jooble, Careerjet) | 🟡 Hay que pedir clave | Agregan ofertas de muchos portales, incluidos Computrabajo y elempleo | Bajo si se aceptan sus términos (que **no** se pudieron leer completos) | Tener el **sitio publicado** (Vercel) y que el PO llene el formulario de socio. Confirmar si cubren Colombia (`es_CO`) y qué condiciones ponen |
+| B | **API de agregadores para socios** (Jooble, Careerjet) | ❌ Descartado (2026-11-20) | Agregan ofertas de muchos portales, incluidos Computrabajo y elempleo | Alto para nuestro uso: **ninguno permite guardar sus ofertas** en una base propia | Solo servirían como búsqueda en vivo aparte, fuera de nuestros filtros y de «¿Aplico?». El PO decidió no usarlos por ahora (ver detalle) |
 | C | **Servicio Público de Empleo / APE del SENA** | 🔴 Caído | Vacantes del Estado y contratos de aprendizaje | Bajo (oficial) | La plataforma SISE está **fuera de servicio desde el 1/11/2026** por falta de contrato, sin fecha de regreso. No hay API pública documentada; DataEmpleo solo publica estadísticas. Pedir acceso a la Unidad del SPE cuando se restablezca |
 | D | **Programas públicos semestrales** (Alcaldía, Gobernación, Estado Joven) | ✋ Manual | Cientos de plazas, 2 veces al año | — | Carga manual en cada ciclo (pocas filas). En v2, "calendario de convocatorias" con aviso de apertura |
 | E | **Convenios** (Magneto, universidades, empresas) | 💬 Requiere gestión | Magneto es el ATS de muchas empresas de Medellín (Alkomprar, Kalley, Comfama, Postobón, ISAGEN…) | Ninguno con convenio | Contacto comercial o institucional. Encaja en v2, junto con la publicación directa por empresas |
@@ -28,10 +28,9 @@ URLs públicas, sin clave:
 
 Con eso se construye **un adaptador por tipo de ATS**, que el motor de ingesta ya soporta, más una lista de empresas con su identificador. Limitación: muchas empresas grandes colombianas usan Magneto, SuccessFactors sin feed o un portal propio, así que la cobertura dependerá de la lista.
 
-### B. Jooble y Careerjet
-- **Jooble:** la clave se pide con un formulario dirigido a webmasters (nombre, cargo, correo, sitio web y teléfono). Es un `POST` con palabras clave, ubicación y radio, que devuelve título, ubicación, extracto, fecha y enlace. Costo y términos: no se pudieron confirmar en la página.
-- **Careerjet:** clave por sitio publicador, con autenticación básica. Exige enviar `user_ip` y `user_agent`. Devuelve título, empresa, fecha, extracto, ubicación, salario y URL. Soporte de `es_CO`: por confirmar.
-- **Uso esperado:** mostrar las ofertas con enlace al original, que es justo lo que hace PrácticasCol. Hay que leer sus términos antes de integrarlas.
+### B. Jooble y Careerjet (descartados el 2026-11-20)
+- **Jooble:** clave por país (la de `jooble.org` es de EE. UU.; para Colombia es `co.jooble.org/api/about`), 100 consultas al día. Se construyó y probó un conector (22 consultas → 303 prácticas del Valle de Aburrá), pero **su soporte respondió al PO** que la API REST es para búsqueda en vivo, «not for creating a local mirror or persistent database of job vacancies», y que exige una mención visible con enlace a Jooble. No se guardó nada. El PO decidió no usarlo por ahora; la alternativa compatible sería una sección «Más resultados en Jooble» consultada en vivo.
+- **Careerjet:** sus condiciones para publicadores prohíben «build or maintain an independent job database» con sus datos y exigen declarar una IP fija (no sirven Vercel ni GitHub Actions). Solo cabría su widget JobBox.
 
 ### C. Servicio Público de Empleo (SPE) y APE del SENA
 - El SISE, la plataforma de toda la red de prestadores (incluido el SENA), **está caído desde el 1 de noviembre de 2026**. El contrato con el operador tecnológico venció el 31 de octubre y no hay fecha de reactivación.

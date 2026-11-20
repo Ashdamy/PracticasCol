@@ -1,4 +1,8 @@
 /**
+ * ⚠ NO SE USA PARA GUARDAR OFERTAS. Jooble respondió al PO (2026-11-20) que su API es para búsqueda en vivo y
+ * no permite crear una copia local ni una base de datos de sus vacantes. El CLI solo deja correrlo con --dry-run.
+ * El código queda por si se hace una sección «Más resultados en Jooble» consultada en vivo (decisión del PO).
+ *
  * Conector de Jooble (API REST oficial para sitios aliados).
  *   POST https://co.jooble.org/api/{clave}   cuerpo JSON: { keywords, location, radius, page, ResultOnPage }
  * Documentación: https://jooblehelpcenter.freshdesk.com/en/support/solutions/articles/60001448238

@@ -5,7 +5,7 @@
  *   npm run ingest -- --archivo <ruta> …  (elige por la extensión: .xlsx o .csv)
  *   npm run ingest -- --ats [--dry-run] [--json]        (todas las fuentes de ingestion/sources/ats.ts; usa la red)
  *   npm run ingest -- --ats=<id> [--dry-run] [--json]   (una sola fuente ATS)
- *   npm run ingest -- --jooble [--max-consultas=N] [--dry-run] [--json]  (API de Jooble Colombia; usa JOOBLE_API_KEY)
+ *   npm run ingest -- --jooble --dry-run [--max-consultas=N] [--json]  (solo prueba: Jooble no permite guardar sus ofertas)
  *   … --store=supabase                                  (guarda en Supabase; lee la configuración de .env.local)
  *
  * Por defecto (`--store=memoria`) trabaja contra un store en memoria sembrado con los datos de prueba, para
@@ -49,16 +49,24 @@ interface CliArgs {
 
 const ALL_ATS = "todas";
 
+/**
+ * Jooble respondió al PO (2026-11-20) que su API es para búsqueda en vivo y NO permite guardar sus ofertas
+ * en una base de datos propia. Por eso `--jooble` solo corre en prueba (`--dry-run`, store en memoria).
+ */
+export const JOOBLE_STORAGE_FORBIDDEN =
+  "Jooble no permite guardar sus ofertas en una base de datos propia (respuesta de Jooble, 2026-11-20): " +
+  "--jooble solo funciona con --dry-run y sin --store=supabase.";
+
 const USAGE = `Uso: npm run ingest -- --xlsx <ruta> [--store=supabase] [--dry-run] [--json] [--auto-publish]
      npm run ingest -- --ats[=<id>] [--store=supabase] [--dry-run] [--json]
-     npm run ingest -- --jooble [--max-consultas=N] [--store=supabase] [--dry-run] [--json]
+     npm run ingest -- --jooble --dry-run [--max-consultas=N] [--json]
 
   --xlsx <ruta>     Libro de Excel con convocatorias (plantilla: ingestion/templates/convocatorias.xlsx)
   --csv <ruta>      Archivo CSV con convocatorias (plantilla: ingestion/templates/convocatorias.csv)
   --archivo <ruta>  Cualquiera de los dos: se elige por la extensión (.xlsx o .csv)
   --ats             Consulta todas las fuentes ATS de ingestion/sources/ats.ts (usa la red)
   --ats=<id>        Consulta una sola fuente ATS: ${ATS_SOURCES.map((s) => s.token).join(", ")}
-  --jooble          Consulta la API de Jooble Colombia (clave en JOOBLE_API_KEY de .env.local; 100 consultas al día)
+  --jooble          Solo con --dry-run: prueba la API de Jooble Colombia sin guardar nada (Jooble no permite guardar sus ofertas)
   --max-consultas=N Tope de consultas a Jooble en esta corrida (por defecto ${DEFAULT_MAX_REQUESTS}, máximo ${JOOBLE_DAILY_LIMIT})
   --store=supabase  Guarda en Supabase (configuración en .env.local). Por defecto: --store=memoria (no guarda)
   --dry-run         Solo valida y muestra el reporte; no guarda nada
@@ -141,6 +149,9 @@ export function parseArgs(argv: readonly string[]): CliArgs {
     throw new Error("--auto-publish solo aplica a archivos: las fuentes automáticas siempre quedan en revisión");
   }
   if (args.maxRequests !== null && !args.jooble) throw new Error("--max-consultas solo aplica a --jooble");
+  if (args.jooble && (!args.dryRun || args.store !== "memoria")) {
+    throw new Error(JOOBLE_STORAGE_FORBIDDEN);
+  }
   return args;
 }
 
